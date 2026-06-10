@@ -33,9 +33,11 @@ class Inputs extends MY_Controller
         $data['breadcrumb_path']    = 'Barang Masuk / List Barang Masuk';
         $data['content']            = $this->inputs->select([
                 'barang_masuk.id', 'user.nama', 
-                'barang_masuk.waktu', 'barang_masuk.total_harga'
+                'barang_masuk.waktu', 'barang_masuk.total_harga',
+                'supplier.nama AS nama_supplier'
             ])
             ->join('user')
+            ->join('supplier')
             ->orderBy('barang_masuk.waktu', 'DESC')
             ->paginate($page)
             ->get();
@@ -67,9 +69,11 @@ class Inputs extends MY_Controller
         $data['breadcrumb_path']    = "Barang Masuk / List Penjualan / Cari / $keyword";
         $data['content']            = $this->inputs->select([
                 'barang_masuk.id', 'user.nama', 
-                'barang_masuk.waktu', 'barang_masuk.total_harga'
+                'barang_masuk.waktu', 'barang_masuk.total_harga',
+                'supplier.nama AS nama_supplier'
             ])
             ->join('user')
+            ->join('supplier')
             ->like('barang_masuk.id', $keyword)
             ->orLike('user.nama', $keyword)
             ->paginate($page)
@@ -105,9 +109,11 @@ class Inputs extends MY_Controller
         $data['breadcrumb_path']    = "Barang Masuk / List Barang Masuk / Filter / $time";
         $data['content']            = $this->inputs->select([
                 'barang_masuk.id', 'user.nama', 
-                'barang_masuk.waktu', 'barang_masuk.total_harga'
+                'barang_masuk.waktu', 'barang_masuk.total_harga',
+                'supplier.nama AS nama_supplier'
             ])
             ->join('user')
+            ->join('supplier')
             ->like('DATE(barang_masuk.waktu)', date('Y-m-d', strtotime($time)))
             ->paginate($page)
             ->get();
@@ -129,9 +135,14 @@ class Inputs extends MY_Controller
 
         $data['barang_masuk']  = $this->inputs->select([
                 'user.id AS id_user', 'user.nama',
-                'barang_masuk.id AS id_barang_masuk', 'barang_masuk.waktu'
+                'barang_masuk.id AS id_barang_masuk', 'barang_masuk.waktu',
+                'supplier.nama    AS nama_supplier',
+                'supplier.telefon AS telefon_supplier',
+                'supplier.email   AS email_supplier',
+                'supplier.alamat  AS alamat_supplier',
             ])
             ->join('user')
+            ->join('supplier')
             ->where('barang_masuk.id', $id_barang_masuk)
             ->where('barang_masuk.id_user', $this->id_user)
             ->first();
@@ -146,7 +157,7 @@ class Inputs extends MY_Controller
             ->join('barang')
             ->where('barang_masuk_detail.id_barang_masuk', $id_barang_masuk)
             ->get();
-        $this->inputs->table = $original_table; // Reset table ke semula
+        $this->inputs->table = $original_table;
 
         $this->view($data);
     }
