@@ -2,29 +2,20 @@
 
 defined('BASEPATH') OR exit('No direct script access allowed');
 
+/**
+ * Controller About - Dinonaktifkan (halaman Extra telah dihapus)
+ */
 class About extends MY_Controller 
 {
     public function __construct()
     {
         parent::__construct();
-        
-        $is_login = $this->session->userdata('is_login');
-
-        if (!$is_login) {
-            $this->session->set_flashdata('warning', 'Anda belum login');
-            redirect(base_url('login'));
-            return;
-        }
     }
 
     public function index()
     {
-        $data['title']              = 'Easy WMS - About us';
-        $data['breadcrumb_title']   = "About us";
-        $data['breadcrumb_path']    = 'Extra / About us';
-        $data['page']               = 'pages/about/index';
-
-        $this->view($data);
+        // Halaman About telah dihapus, redirect ke dashboard
+        redirect(base_url('home'));
     }
 }
 

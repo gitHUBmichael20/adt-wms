@@ -80,3 +80,7 @@ $route['recipients/(:num)'] = 'recipients/index/$1';
 $route['users/(:num)']      = 'users/index/$1';
 $route['inputs/(:num)']     = 'inputs/index/$1';
 $route['outputs/(:num)']    = 'outputs/index/$1';
+
+// Routes konfirmasi checkout via email
+$route['cartin/confirm/(:any)/(:any)']  = 'cartin/confirm/$1/$2';
+$route['cartout/confirm/(:any)/(:any)'] = 'cartout/confirm/$1/$2';

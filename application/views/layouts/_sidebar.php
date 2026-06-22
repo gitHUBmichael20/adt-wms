@@ -143,22 +143,6 @@
                     </li>
                 <?php endif ?>
                 
-                <li class="list-divider"></li>
-
-                <!-- Submemu Extra -->
-                <li class="nav-small-cap"><span class="hide-menu">Extra</span></li>
-                <li class="sidebar-item"> 
-                    <a class="sidebar-link sidebar-link" href="https://github.com/sunudika/Easy-WMS.git" aria-expanded="false">
-                        <i data-feather="github" class="feather-icon"></i>
-                        <span class="hide-menu">Repository</span>
-                    </a>
-                </li>
-                <li class="sidebar-item">
-                    <a class="sidebar-link sidebar-link" href="<?= base_url('about') ?>" aria-expanded="false">
-                        <i data-feather="info" class="feather-icon"></i>
-                        <span class="hide-menu">About us</span>
-                    </a>
-                </li>
             </ul>
         </nav>
         <!-- End Sidebar navigation -->

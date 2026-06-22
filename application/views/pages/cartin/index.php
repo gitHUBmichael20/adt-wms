@@ -77,7 +77,7 @@
                         <!-- Tengah: dropdown supplier + tombol kosongkan -->
                         <div class="col-md-6 col-sm-12 mb-2">
                             <!-- Form checkout: supplier dropdown + tombol checkout -->
-                            <form action="<?= base_url('cartin/checkout') ?>" method="POST" id="form-checkout">
+                            <form action="<?= base_url('cartin/request_checkout') ?>" method="POST" id="form-checkout">
                                 <div class="input-group">
                                     <div class="input-group-prepend">
                                         <span class="input-group-text bg-success text-white">
@@ -103,7 +103,7 @@
                                 </button>
                             </form>
                             <button type="submit" form="form-checkout" class="btn btn-success btn-rounded">
-                                Checkout <i class="fas fa-angle-right"></i>
+                                <i class="fas fa-envelope"></i> Kirim Konfirmasi <i class="fas fa-angle-right"></i>
                             </button>
                         </div>
                     </div>

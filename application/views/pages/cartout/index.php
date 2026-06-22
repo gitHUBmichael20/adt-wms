@@ -63,7 +63,7 @@
 
                 <!-- Form Checkout: Penerima, PO, Keterangan -->
                 <div class="card-body border-top">
-                    <form action="<?= base_url('cartout/checkout') ?>" method="POST" id="form-checkout">
+                    <form action="<?= base_url('cartout/request_checkout') ?>" method="POST" id="form-checkout">
 
                         <!-- Hidden inputs untuk serial number — diisi via JS sebelum submit -->
                         <?php foreach ($content as $row) : ?>
@@ -110,7 +110,7 @@
                                 <button type="button" onclick="dropCart()" class="btn btn-danger btn-rounded text-white"><i class="fas fa-trash"></i> Kosongkan keranjang</button>
                             </div>
                             <div class="col-md-4 col-sm-12 mb-2">
-                                <button type="submit" class="btn btn-success btn-rounded float-right">Checkout <i class="fas fa-angle-right"></i></button>
+                                <button type="submit" class="btn btn-success btn-rounded float-right"><i class="fas fa-envelope"></i> Kirim Konfirmasi <i class="fas fa-angle-right"></i></button>
                             </div>
                         </div>
                     </form>
