@@ -54,7 +54,7 @@ class Cartout extends MY_Controller
     {
         if (!$_POST || $this->input->post('qty_keluar') < 1) {
             $this->session->set_flashdata('error', 'Kuantitas tidak boleh kosong');
-            redirect(base_url('items'));
+            redirect(base_url('items/out'));
             return;
         }
         
@@ -223,9 +223,10 @@ class Cartout extends MY_Controller
         }
 
         // Ambil data form dari POST
-        $id_penerima = $this->input->post('id_penerima');
-        $no_po       = $this->input->post('no_po');
-        $keterangan  = $this->input->post('keterangan');
+        $id_penerima   = $this->input->post('id_penerima');
+        $no_po         = $this->input->post('no_po');
+        $keterangan    = $this->input->post('keterangan');
+        $serial_numbers = $this->input->post('serial_numbers'); // array [id_barang => serial_number]
 
         // Menyiapkan insert table barang_keluar
         $data['id_user']      = $this->id_user;
@@ -244,6 +245,11 @@ class Cartout extends MY_Controller
             // Modifikasi tiap cart
             foreach ($cart as $row) {
                 $row['id_barang_keluar'] = $id_barang_keluar;
+                // Simpan serial number jika ada (dikirim dari form sebagai array [id_barang => sn])
+                $id_barang_row = $row['id_barang'];
+                $row['serial_number'] = (!empty($serial_numbers) && !empty($serial_numbers[$id_barang_row]))
+                    ? $serial_numbers[$id_barang_row]
+                    : null;
                 unset($row['id'], $row['id_user']);                 // Hapus kolom tidak penting
                 $this->db->insert('barang_keluar_detail', $row);    // Insert ke tabel barang_keluar_detail
             }
@@ -273,6 +279,7 @@ class Cartout extends MY_Controller
             $this->cartout->table = 'barang_keluar_detail';
             $data['list_barang'] = $this->cartout->select([
                     'barang_keluar_detail.qty',
+                    'barang_keluar_detail.serial_number',
                     'barang.id_satuan', 'barang.nama', 'barang.harga',
                 ])
                 ->join('barang')
@@ -291,7 +298,9 @@ class Cartout extends MY_Controller
             $this->_send_email_keluar($data['barang_keluar'], $data['list_barang']);
             // ───────────────────────────────────────────────────────────────
 
-            $this->view($data);
+            // Langsung redirect ke halaman detail
+            redirect(base_url('outputs/detail/' . $id_barang_keluar));
+            return;
         } else {
             $this->session->set_flashdata('error', 'Oops! Terjadi kesalahan');
             $this->index();

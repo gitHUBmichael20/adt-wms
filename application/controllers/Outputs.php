@@ -139,7 +139,8 @@ class Outputs extends MY_Controller
 
         $this->outputs->table = 'barang_keluar_detail';
         $data['list_barang'] = $this->outputs->select([
-                'barang_keluar_detail.qty', 'barang.id_satuan', 'barang.nama', 'barang.harga',
+                'barang_keluar_detail.qty', 'barang_keluar_detail.serial_number',
+                'barang.id_satuan', 'barang.nama', 'barang.harga',
             ])
             ->join('barang')
             ->where('barang_keluar_detail.id_barang_keluar', $id_barang_keluar)
@@ -155,6 +156,59 @@ class Outputs extends MY_Controller
 
         $this->view($data);
     }
+
+    /**
+     * Download Delivery Order Barang Keluar sebagai DOCX
+     * URL: outputs/download_docx/{id}
+     *
+     * - Generate DOCX dari template delivery_order_template.docx
+     * - Simpan backup ke application/invoices/out/
+     * - Stream DOCX ke browser
+     */
+    public function download_docx($id_barang_keluar)
+    {
+        // Ambil data barang keluar
+        $barang_keluar = $this->outputs->select([
+                'user.id AS id_user', 'user.nama',
+                'barang_keluar.id AS id_barang_keluar', 'barang_keluar.waktu',
+                'barang_keluar.no_po', 'barang_keluar.keterangan',
+                'barang_keluar.id_penerima'
+            ])
+            ->join('user')
+            ->where('barang_keluar.id', $id_barang_keluar)
+            ->first();
+
+        if (!$barang_keluar) {
+            show_404();
+            return;
+        }
+
+        // Ambil list barang
+        $this->outputs->table = 'barang_keluar_detail';
+        $list_barang = $this->outputs->select([
+                'barang_keluar_detail.qty', 'barang_keluar_detail.serial_number',
+                'barang.id_satuan', 'barang.nama', 'barang.harga',
+            ])
+            ->join('barang')
+            ->where('barang_keluar_detail.id_barang_keluar', $id_barang_keluar)
+            ->get();
+
+        // Load penerima
+        $penerima = null;
+        if ($barang_keluar->id_penerima) {
+            $this->load->model('Recipients_model', 'recipients_out');
+            $penerima = $this->recipients_out->where('id', $barang_keluar->id_penerima)->first();
+        }
+
+        // Path backup
+        $filename  = 'DO_' . str_pad($id_barang_keluar, 5, '0', STR_PAD_LEFT)
+                   . '_' . date('Ymd', strtotime($barang_keluar->waktu)) . '.docx';
+        $save_path = APPPATH . 'invoices/out/' . $filename;
+
+        // Load library & generate
+        $this->load->library('Docx_generator');
+        $this->docx_generator->generate_delivery_order($barang_keluar, $list_barang, $penerima, $save_path);
+    }
 }
 
-/* End of file Ouputs.php */
+/* End of file Outputs.php */

@@ -161,6 +161,58 @@ class Inputs extends MY_Controller
 
         $this->view($data);
     }
+
+    /**
+     * Download Invoice Barang Masuk sebagai DOCX
+     * URL: inputs/download_docx/{id}
+     *
+     * - Generate DOCX dari template invoice_template.docx
+     * - Simpan backup ke application/invoices/in/
+     * - Stream DOCX ke browser (print dialog akan muncul otomatis setelah user buka file)
+     */
+    public function download_docx($id_barang_masuk)
+    {
+        // Ambil data barang masuk
+        $barang_masuk = $this->inputs->select([
+                'user.id AS id_user', 'user.nama',
+                'barang_masuk.id AS id_barang_masuk', 'barang_masuk.waktu',
+                'supplier.nama    AS nama_supplier',
+                'supplier.telefon AS telefon_supplier',
+                'supplier.email   AS email_supplier',
+                'supplier.alamat  AS alamat_supplier',
+            ])
+            ->join('user')
+            ->join('supplier')
+            ->where('barang_masuk.id', $id_barang_masuk)
+            ->where('barang_masuk.id_user', $this->id_user)
+            ->first();
+
+        if (!$barang_masuk) {
+            show_404();
+            return;
+        }
+
+        // Ambil list barang
+        $original_table = $this->inputs->table;
+        $this->inputs->table = 'barang_masuk_detail';
+        $list_barang = $this->inputs->select([
+                'barang_masuk_detail.qty', 'barang_masuk_detail.subtotal',
+                'barang.id_satuan', 'barang.nama', 'barang.harga',
+            ])
+            ->join('barang')
+            ->where('barang_masuk_detail.id_barang_masuk', $id_barang_masuk)
+            ->get();
+        $this->inputs->table = $original_table;
+
+        // Path backup
+        $filename  = 'INV_' . str_pad($id_barang_masuk, 5, '0', STR_PAD_LEFT)
+                   . '_' . date('Ymd', strtotime($barang_masuk->waktu)) . '.docx';
+        $save_path = APPPATH . 'invoices/in/' . $filename;
+
+        // Load library & generate
+        $this->load->library('Docx_generator');
+        $this->docx_generator->generate_invoice($barang_masuk, $list_barang, $save_path);
+    }
 }
 
 /* End of file Inputs.php */

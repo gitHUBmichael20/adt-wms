@@ -69,7 +69,7 @@
                     <div class="row">
                         <!-- Tombol kiri: kembali ke list barang -->
                         <div class="col-md-3 col-sm-12 mb-2">
-                            <a href="<?= base_url('items') ?>" class="btn btn-warning btn-rounded text-white">
+                            <a href="<?= base_url('items/in') ?>" class="btn btn-warning btn-rounded text-white">
                                 <i class="fas fa-angle-left"></i> List barang
                             </a>
                         </div>

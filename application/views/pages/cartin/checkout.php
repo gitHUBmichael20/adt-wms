@@ -82,7 +82,7 @@
                             <a href="<?= base_url('items') ?>" class="btn btn-primary btn-rounded text-white"><i class="fas fa-angle-left"></i> List barang</a>
                         </div>
                         <div class="col-md-6 col-sm-12 mb-2">
-                            <button class="btn btn-success btn-rounded float-right" onclick="printDiv('printBukti')">Cetak Bukti <i class="fas fa-angle-right"></i></button>
+                            
                         </div>
                     </div>
                 </div>

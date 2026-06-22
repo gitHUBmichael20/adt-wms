@@ -14,6 +14,7 @@
                             <tr>
                                 <th>Barang</th>
                                 <th class="text-center">Jumlah</th>
+                                <th>Serial Number</th>
                                 <th></th>
                             </tr>
                         </thead>
@@ -38,6 +39,17 @@
                                         </form>
                                     </td>
                                     <td>
+                                        <!-- Serial number dikirim saat checkout via hidden input, diisi di kolom ini -->
+                                        <input
+                                            type="text"
+                                            class="form-control serial-number-input"
+                                            data-id-barang="<?= $row->id_barang ?>"
+                                            placeholder="Contoh: SN-ABC123 (opsional)"
+                                            style="min-width:180px;"
+                                        >
+                                        <small class="text-muted">Pisahkan dengan koma jika lebih dari 1</small>
+                                    </td>
+                                    <td>
                                         <form action="<?= base_url('cartout/delete') ?>" method="POST">
                                             <input type="hidden" name="id" value="<?= $row->id ?>">
                                             <button type="submit" class="btn btn-danger" onclick="return confirm('Are you sure?')"><i class="fas fa-trash-alt"></i></button>
@@ -52,6 +64,17 @@
                 <!-- Form Checkout: Penerima, PO, Keterangan -->
                 <div class="card-body border-top">
                     <form action="<?= base_url('cartout/checkout') ?>" method="POST" id="form-checkout">
+
+                        <!-- Hidden inputs untuk serial number — diisi via JS sebelum submit -->
+                        <?php foreach ($content as $row) : ?>
+                            <input
+                                type="hidden"
+                                name="serial_numbers[<?= $row->id_barang ?>]"
+                                id="sn-hidden-<?= $row->id_barang ?>"
+                                value=""
+                            >
+                        <?php endforeach ?>
+
                         <div class="row">
                             <div class="col-md-6">
                                 <div class="form-group">
@@ -81,7 +104,7 @@
 
                         <div class="row">
                             <div class="col-md-4 col-sm-12 mb-2">
-                                <a href="<?= base_url('items') ?>" class="btn btn-warning btn-rounded text-white"><i class="fas fa-angle-left"></i> List barang</a>
+                                <a href="<?= base_url('items/out') ?>" class="btn btn-warning btn-rounded text-white"><i class="fas fa-angle-left"></i> List barang</a>
                             </div>
                             <div class="col-md-4 col-sm-12 mb-2 d-flex justify-content-center">
                                 <button type="button" onclick="dropCart()" class="btn btn-danger btn-rounded text-white"><i class="fas fa-trash"></i> Kosongkan keranjang</button>
@@ -108,4 +131,15 @@ function dropCart() {
         document.getElementById('form-drop').submit();
     }
 }
+
+// Sinkronkan nilai serial number dari input tabel ke hidden input form sebelum submit
+document.getElementById('form-checkout').addEventListener('submit', function() {
+    document.querySelectorAll('.serial-number-input').forEach(function(input) {
+        var idBarang = input.getAttribute('data-id-barang');
+        var hidden   = document.getElementById('sn-hidden-' + idBarang);
+        if (hidden) {
+            hidden.value = input.value.trim();
+        }
+    });
+});
 </script>

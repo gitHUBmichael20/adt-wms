@@ -53,7 +53,27 @@ $route['default_controller']    = 'login';
 $route['404_override']          = 'NotFound';
 $route['translate_uri_dashes']  = FALSE;
 
-$route['items/(:num)']      = 'items/index/$1';
+$route['items/(:num)']              = 'items/index/$1';
+
+// Routes barang masuk (in)
+$route['items/in/(:num)']                   = 'items/in/$1';
+$route['items/in/unit/(:any)/(:num)']       = 'items/in_unit/$1/$2';
+$route['items/in/unit/(:any)']              = 'items/in_unit/$1';
+$route['items/in/availability/(:any)/(:num)'] = 'items/in_availability/$1/$2';
+$route['items/in/availability/(:any)']      = 'items/in_availability/$1';
+$route['items/in/search/(:num)']            = 'items/in_search/$1';
+$route['items/in/search']                   = 'items/in_search';
+$route['items/in']                          = 'items/in';
+
+// Routes barang keluar (out)
+$route['items/out/(:num)']                  = 'items/out/$1';
+$route['items/out/unit/(:any)/(:num)']      = 'items/out_unit/$1/$2';
+$route['items/out/unit/(:any)']             = 'items/out_unit/$1';
+$route['items/out/availability/(:any)/(:num)'] = 'items/out_availability/$1/$2';
+$route['items/out/availability/(:any)']     = 'items/out_availability/$1';
+$route['items/out/search/(:num)']           = 'items/out_search/$1';
+$route['items/out/search']                  = 'items/out_search';
+$route['items/out']                         = 'items/out';
 $route['units/(:num)']      = 'units/index/$1';
 $route['suppliers/(:num)']  = 'suppliers/index/$1';
 $route['recipients/(:num)'] = 'recipients/index/$1';

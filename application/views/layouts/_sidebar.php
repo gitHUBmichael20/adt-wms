@@ -26,12 +26,7 @@
                         </a>
                     </li>
                 <?php endif ?>
-                <li class="sidebar-item">
-                    <a class="sidebar-link sidebar-link" href="<?= base_url('items') ?>" aria-expanded="false">
-                        <i data-feather="package" class="feather-icon"></i>
-                        <span class="hide-menu">List Barang</span>
-                    </a>
-                </li>
+
                 <?php if ($this->session->userdata('role') == 'admin') : ?>
                     <li class="sidebar-item">
                         <a class="sidebar-link" href="<?= base_url('unit') ?>" aria-expanded="false">
@@ -85,8 +80,14 @@
 
                 <li class="list-divider"></li>
 
-                <!-- Submemu Barang -->
+                <!-- Submemu Barang Masuk -->
                 <li class="nav-small-cap"><span class="hide-menu">Barang Masuk</span></li>
+                <li class="sidebar-item">
+                    <a class="sidebar-link" href="<?= base_url('items/in') ?>" aria-expanded="false">
+                        <i data-feather="log-in" class="feather-icon"></i>
+                        <span class="hide-menu">Pilih Barang Masuk</span>
+                    </a>
+                </li>
                 <li class="sidebar-item">
                     <a class="sidebar-link" href="<?= base_url('cartin') ?>" aria-expanded="false">
                         <i data-feather="shopping-cart" class="feather-icon"></i>
@@ -102,8 +103,14 @@
 
                 <li class="list-divider"></li>
 
-                <!-- Submemu Manajemen Inventory -->
+                <!-- Submemu Barang Keluar -->
                 <li class="nav-small-cap"><span class="hide-menu">Barang Keluar</span></li>
+                <li class="sidebar-item">
+                    <a class="sidebar-link" href="<?= base_url('items/out') ?>" aria-expanded="false">
+                        <i data-feather="log-out" class="feather-icon"></i>
+                        <span class="hide-menu">Pilih Barang Keluar</span>
+                    </a>
+                </li>
                 <li class="sidebar-item">
                     <a class="sidebar-link sidebar-link" href="<?= base_url('cartout') ?>" aria-expanded="false">
                         <i data-feather="shopping-cart" class="feather-icon"></i>

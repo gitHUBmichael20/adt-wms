@@ -53,7 +53,7 @@ class Cartin extends MY_Controller
     {
         if (!$_POST || $this->input->post('qty_masuk') < 1) {
             $this->session->set_flashdata('error', 'Kuantitas tidak boleh kosong');
-            redirect(base_url('items'));
+            redirect(base_url('items/in'));
             return;
         }
         
@@ -289,7 +289,9 @@ class Cartin extends MY_Controller
             // Kirim email notifikasi
             $this->_send_email_masuk($data['barang_masuk'], $data['list_barang']);
 
-            $this->view($data);
+            // Langsung redirect ke halaman detail
+            redirect(base_url('inputs/detail/' . $id_barang_masuk));
+            return;
 
         } else {
             $this->session->set_flashdata('error', 'Oops! Terjadi kesalahan');
