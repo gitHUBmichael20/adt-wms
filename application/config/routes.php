@@ -81,6 +81,10 @@ $route['users/(:num)']      = 'users/index/$1';
 $route['inputs/(:num)']     = 'inputs/index/$1';
 $route['outputs/(:num)']    = 'outputs/index/$1';
 
-// Routes konfirmasi checkout via email
-$route['cartin/confirm/(:any)/(:any)']  = 'cartin/confirm/$1/$2';
-$route['cartout/confirm/(:any)/(:any)'] = 'cartout/confirm/$1/$2';
+// Routes konfirmasi checkout via email (publik — admin tidak perlu login)
+// Diarahkan ke controller Confirm yang tidak memerlukan sesi user
+$route['confirm/checkout/(:any)/(:any)'] = 'confirm/checkout/$1/$2';
+
+// Route lama dipertahankan untuk kompatibilitas (redirect ke yang baru)
+$route['cartin/confirm/(:any)/(:any)']  = 'confirm/checkout/$1/$2';
+$route['cartout/confirm/(:any)/(:any)'] = 'confirm/checkout/$1/$2';
