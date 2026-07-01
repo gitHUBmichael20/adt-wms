@@ -13,6 +13,7 @@ class Supplier_model extends MY_Model
             'email'     => '',
             'telefon'  => '',
             'alamat'   => '',
+            'npwp'     => '',
         ];
     }
 
@@ -50,6 +51,11 @@ class Supplier_model extends MY_Model
                 'errors' => [
                     'required' => '<h6>%s harus diisi.</h6>'
                 ]
+            ],
+            [
+                'field' => 'npwp',
+                'label' => 'NPWP',
+                'rules' => 'trim',
             ]
         ];
 
@@ -66,6 +72,7 @@ class Supplier_model extends MY_Model
             'email'     => strtolower($input->email),
             'telefon'   => $input->telefon,
             'alamat'    => $input->alamat,
+            'npwp'      => isset($input->npwp) ? $input->npwp : '',
             'status'    => 'aktif'
         ];
 

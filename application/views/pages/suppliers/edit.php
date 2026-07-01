@@ -103,6 +103,23 @@
                             </div>
                             <div class="form-group">
                                 <div class="row">
+                                    <label class="col-lg-2">NPWP</label>
+                                    <div class="col-lg-10">
+                                        <div class="row">
+                                            <div class="col-md-12">
+                                                <div class="input-group">
+                                                    <div class="input-group-prepend">
+                                                        <label class="input-group-text" for="npwp"><i class="fas fa-id-badge"></i></label>
+                                                    </div>
+                                                    <?= form_input('npwp', isset($input->npwp) ? $input->npwp : '', ['class' => 'form-control', 'placeholder' => 'Nomor NPWP supplier (opsional)']) ?>
+                                                </div>
+                                            </div>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                            <div class="form-group">
+                                <div class="row">
                                     <label class="col-lg-2">Status Supplier</label>
                                     <div class="col-lg-10">
                                         <div class="row">

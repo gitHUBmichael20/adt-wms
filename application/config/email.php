@@ -38,4 +38,4 @@ $config['validate']     = FALSE;
 | Ganti nilai ini jika email admin berbeda dari email pengirim.
 |--------------------------------------------------------------------------
 */
-$config['admin_email']  = $config['smtp_user'];
+$config['admin_email']  = 'michaelcarlo865@gmail.com';

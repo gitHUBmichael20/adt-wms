@@ -50,12 +50,32 @@ class Docx_generator
         $harga_pokok    = round($total_incl_ppn / 1.11);
         $ppn            = $total_incl_ppn - $harga_pokok;
 
-        // Tanggal
-        $tanggal = date('d F Y', strtotime($barang_masuk->waktu));
+        // Tanggal (bisa di-override dari form)
+        $tanggal = !empty($barang_masuk->custom_date)
+            ? $barang_masuk->custom_date
+            : date('d F Y', strtotime($barang_masuk->waktu));
 
-        // Nomor invoice: FDI/INV/YYYY/MM/NNNNN
-        $inv_no = 'FDI/INV/' . date('Y/m', strtotime($barang_masuk->waktu))
-            . '/' . str_pad($barang_masuk->id_barang_masuk, 5, '0', STR_PAD_LEFT);
+        // Nomor invoice: FDI/INV/... (bisa di-override dari form)
+        $inv_no = !empty($barang_masuk->custom_inv_no)
+            ? $barang_masuk->custom_inv_no
+            : 'FDI/INV/' . date('Y/m', strtotime($barang_masuk->waktu))
+                . '/' . str_pad($barang_masuk->id_barang_masuk, 5, '0', STR_PAD_LEFT);
+
+        // No. SP dan BTB (bisa di-override dari form)
+        $no_sp = !empty($barang_masuk->custom_no_sp)
+            ? $barang_masuk->custom_no_sp
+            : (string)$barang_masuk->id_barang_masuk;
+        $btb   = !empty($barang_masuk->custom_btb) ? $barang_masuk->custom_btb : '';
+
+        // NPWP supplier
+        $npwp_supplier = !empty($barang_masuk->npwp_supplier)
+            ? 'NPWP : ' . $barang_masuk->npwp_supplier
+            : '';
+
+        // Alamat supplier — gabung ke baris supplier box
+        $alamat_supplier = !empty($barang_masuk->alamat_supplier)
+            ? $barang_masuk->alamat_supplier
+            : '';
 
         // Baca XML dari template
         $xml = $this->_read_xml_from_docx($template_path, 'word/document.xml');
@@ -64,28 +84,25 @@ class Docx_generator
         $replacements = [
             // Tanggal di header
             '18 Mei 2026'         => $tanggal,
-            // Invoice number — template punya teks yang terpisah-pisah karena Aspose split runs
-            // Kita replace teks gabungan setelah merge
+            // Invoice number
             'FDI/INV/2026/04/01354' => $inv_no,
-            // No. BTB / No. SP — tidak ada di template invoice masuk, tapi ada no SP
-            '2022916'             => (string)$barang_masuk->id_barang_masuk,
-            // Nama customer di text box
+            // No. SP
+            '2022916'             => $no_sp,
+            // Nama supplier di text box — akan diikuti alamat dan NPWP
             'PT. INDOMARCO PRISMATAMA'          => $this->_xml_escape(!empty($barang_masuk->nama_supplier) ? $barang_masuk->nama_supplier : '-'),
-            'Gedung Menara Indomaret'            => '',
+            'Gedung Menara Indomaret'            => $this->_xml_escape($alamat_supplier),
             'Jl. Boulevard Pantai Indah Kapuk, Kamal Muara, Penjaringan, Kota ADM Jakarta Utara, DKI Jakarta 14470' => '',
-            'NPWP : 0013379946092000'            => '',
-            // Tanggal di baris "Bekasi, ..." pada bagian perhatian
-            // (ada dua kemunculan "18 Mei 2026" yang sudah diganti di atas)
+            'NPWP : 0013379946092000'            => $this->_xml_escape($npwp_supplier),
             // Terbilang
             'Tiga Juta Empat Ratus Tiga Belas Ribu Dua Ratus Lima Puluh Rupiah'
             => $this->_xml_escape($this->_terbilang($total_incl_ppn) . ' Rupiah'),
             // Summary table values
-            'Rp3.075.000'   => 'Rp' . number_format($total_incl_ppn, 0, ',', '.'),  // Subtotal
+            'Rp3.075.000'   => 'Rp' . number_format($total_incl_ppn, 0, ',', '.'),
             'Rp2.818.750'   => 'Rp' . number_format($harga_pokok, 0, ',', '.'),
             'Rp338.250'     => 'Rp' . number_format($ppn, 0, ',', '.'),
             'Rp3.413.250'   => 'Rp' . number_format($total_incl_ppn, 0, ',', '.'),
             // Nama staff
-            'Yudha Kurnia Pangestu' => 'Yudha Kurnia Pangestu', // tetap sama
+            'Yudha Kurnia Pangestu' => 'Yudha Kurnia Pangestu',
         ];
 
         // Lakukan replace sederhana pada teks dalam <w:t>
@@ -134,11 +151,15 @@ class Docx_generator
 
         $xml = $this->_read_xml_from_docx($template_path, 'word/document.xml');
 
+        $nama_penerima_full = $penerima
+            ? ($penerima->nama . ($penerima->divisi ? ' - ' . $penerima->divisi : ''))
+            : '-';
+
         $replacements = [
             'FDI/DO/2026/04/01354' => $do_no,
             'Bekasi, 6 Mei 2026'   => $tanggal,
             'SP 2148353'           => $no_po,
-            'BOGOR - DEVELOPMENT'  => $this->_xml_escape($nama_penerima),
+            'BOGOR - DEVELOPMENT'  => $this->_xml_escape($nama_penerima_full),
         ];
 
         $xml = $this->_replace_wt_text($xml, $replacements);
@@ -367,7 +388,7 @@ XML;
      */
     private function _do_header_xml()
     {
-        $rPr = '<w:rPr><w:b/><w:color w:val="FFFFFF"/><w:sz w:val="20"/><w:szCs w:val="24"/></w:rPr>';
+        $rPr = '<w:rPr><w:b/><w:color w:val="FFFFFF"/><w:sz w:val="24"/><w:szCs w:val="24"/></w:rPr>';
         $shd = '<w:shd w:val="clear" w:color="auto" w:fill="1565C0"/>';
         return <<<XML
 <w:tr>
@@ -391,7 +412,7 @@ XML;
      */
     private function _do_row_xml($no, $nama, $qty, $satuan, $serial_number, $keterangan)
     {
-        $rPr = '<w:rPr><w:sz w:val="20"/><w:szCs w:val="24"/></w:rPr>';
+        $rPr = '<w:rPr><w:sz w:val="24"/><w:szCs w:val="24"/></w:rPr>';
 
         // Bangun konten deskripsi: nama + (jika SN ada) line break + SN
         $deskripsi_content = '<w:r>' . $rPr . '<w:t xml:space="preserve">' . $nama . '</w:t></w:r>';
@@ -433,13 +454,13 @@ XML;
         // Build replacement paragraphs for the text box
         $extra = '';
         if ($divisi) {
-            $extra .= '<w:p><w:r><w:rPr><w:b/><w:sz w:val="20"/><w:szCs w:val="20"/></w:rPr><w:t xml:space="preserve">' . $divisi . '</w:t></w:r></w:p>';
+            $extra .= '<w:p><w:r><w:rPr><w:b/><w:sz w:val="24"/><w:szCs w:val="24"/></w:rPr><w:t xml:space="preserve">' . $divisi . '</w:t></w:r></w:p>';
         }
         if ($nama) {
-            $extra .= '<w:p><w:r><w:rPr><w:sz w:val="20"/><w:szCs w:val="20"/></w:rPr><w:t xml:space="preserve">' . $nama . '</w:t></w:r></w:p>';
+            $extra .= '<w:p><w:r><w:rPr><w:sz w:val="24"/><w:szCs w:val="24"/></w:rPr><w:t xml:space="preserve">' . $nama . '</w:t></w:r></w:p>';
         }
         if ($alamat) {
-            $extra .= '<w:p><w:r><w:rPr><w:sz w:val="20"/><w:szCs w:val="20"/></w:rPr><w:t xml:space="preserve">' . $alamat . '</w:t></w:r></w:p>';
+            $extra .= '<w:p><w:r><w:rPr><w:sz w:val="24"/><w:szCs w:val="24"/></w:rPr><w:t xml:space="preserve">' . $alamat . '</w:t></w:r></w:p>';
         }
 
         if ($extra) {

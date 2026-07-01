@@ -3,7 +3,7 @@
         <a href="<?= base_url('inputs') ?>" class="btn btn-primary btn-rounded">
             <i class="fas fa-angle-left"></i> Kembali ke Catatan Masuk
         </a>
-        <a href="<?= base_url('inputs/download_docx/' . $barang_masuk->id_barang_masuk) ?>"
+        <a href="<?= base_url('inputs/invoice_form/' . $barang_masuk->id_barang_masuk) ?>"
            class="btn btn-warning btn-rounded text-white"
            title="Download Invoice sebagai DOCX">
             <i class="fas fa-file-word"></i> Download Invoice DOCX

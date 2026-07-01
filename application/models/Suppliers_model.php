@@ -13,6 +13,7 @@ class Suppliers_model extends MY_Model
             'email'     => '',
             'telefon'  => '',
             'alamat'   => '',
+            'npwp'     => '',
         ];
     }
 

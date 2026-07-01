@@ -103,7 +103,7 @@ $autoload['helper'] = array('url', 'form', 'easy_wms');
 | config files.  Otherwise, leave it blank.
 |
 */
-$autoload['config'] = array();
+$autoload['config'] = array('email');
 
 /*
 | -------------------------------------------------------------------

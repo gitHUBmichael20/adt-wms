@@ -49,6 +49,15 @@
                                 <td><?= !empty($barang_keluar->no_po) ? htmlspecialchars($barang_keluar->no_po) : '-' ?></td>
                             </tr>
                             <tr>
+                                <td colspan="3" style="padding-bottom:4px;">
+                                    <?php if ($penerima) : ?>
+                                        <span style="font-size:17px; font-weight:700; color:#1a237e; letter-spacing:0.3px;">
+                                            <?= htmlspecialchars($penerima->nama) ?>
+                                        </span>
+                                    <?php endif ?>
+                                </td>
+                            </tr>
+                            <tr>
                                 <td>Customer</td>
                                 <td>:</td>
                                 <td>

@@ -418,7 +418,19 @@ class Cartout extends MY_Controller
 </body>
 </html>';
 
-        $this->email->initialize(['mailtype' => 'html', 'charset' => 'utf-8']);
+        $email_config = [
+            'protocol'     => $this->config->item('protocol'),
+            'smtp_host'    => $this->config->item('smtp_host'),
+            'smtp_port'    => $this->config->item('smtp_port'),
+            'smtp_timeout' => $this->config->item('smtp_timeout'),
+            'smtp_user'    => $this->config->item('smtp_user'),
+            'smtp_pass'    => $this->config->item('smtp_pass'),
+            'charset'      => 'utf-8',
+            'mailtype'     => 'html',
+            'newline'      => "\r\n",
+            'wordwrap'     => TRUE,
+        ];
+        $this->email->initialize($email_config);
         $this->email->clear();
         $this->email->from($this->config->item('smtp_user'), 'Easy WMS Notification');
         $this->email->to($admin_email);
