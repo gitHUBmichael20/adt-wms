@@ -146,14 +146,20 @@ class Confirm extends CI_Controller
         $keterangan     = isset($payload['keterangan'])     ? $payload['keterangan']     : null;
         $serial_numbers = isset($payload['serial_numbers']) ? $payload['serial_numbers'] : [];
 
-        // Cek keranjang masih ada
-        $cart = $this->db->where('id_user', $id_user)->get('keranjang_keluar')->result_array();
+        // PENTING: gunakan SNAPSHOT keranjang yang disimpan saat form checkout
+        // disubmit (kolom cart_items di pending_checkout), BUKAN keranjang live
+        // di tabel keranjang_keluar. Admin baru konfirmasi belakangan (menit/jam
+        // kemudian) lewat email, dan kalau user sempat mengubah/menghapus isi
+        // keranjangnya di antara waktu itu, memakai keranjang live akan membuat
+        // barang yang benar-benar dikeluarkan berbeda dari kuantitas yang tadi
+        // diisi di form dan yang ditampilkan ke admin di email konfirmasi.
+        $cart = json_decode($pending->cart_items, true);
         if (empty($cart)) {
             $this->_show_result('warning', 'Keranjang sudah kosong! Mungkin sudah dikonfirmasi sebelumnya.');
             return;
         }
 
-        // Validasi stok (pastikan tidak melebihi stok tersedia)
+        // Validasi stok (pastikan tidak melebihi stok tersedia SAAT INI)
         foreach ($cart as $row) {
             $barang = $this->db->where('id', $row['id_barang'])->get('barang')->row();
             if (!$barang) continue;
@@ -186,18 +192,23 @@ class Confirm extends CI_Controller
             return;
         }
 
-        // Pindahkan keranjang ke barang_keluar_detail
+        // Pindahkan snapshot keranjang ke barang_keluar_detail
         foreach ($cart as $row) {
-            $row['id_barang_keluar'] = $id_barang_keluar;
             $id_barang_row = $row['id_barang'];
-            $row['serial_number'] = (!empty($serial_numbers) && !empty($serial_numbers[$id_barang_row]))
+            $detail = [
+                'id_barang_keluar' => $id_barang_keluar,
+                'id_barang'        => $id_barang_row,
+                'qty'              => $row['qty'],
+            ];
+            $detail['serial_number'] = (!empty($serial_numbers) && !empty($serial_numbers[$id_barang_row]))
                 ? $serial_numbers[$id_barang_row]
                 : null;
-            unset($row['id'], $row['id_user']);
-            $this->db->insert('barang_keluar_detail', $row);
+            $this->db->insert('barang_keluar_detail', $detail);
         }
 
-        // Hapus keranjang
+        // Bersihkan keranjang live milik user (transaksi sudah selesai diproses
+        // berdasarkan snapshot di atas, jadi apapun isi keranjang live sekarang
+        // sudah tidak relevan lagi)
         $this->db->delete('keranjang_keluar', ['id_user' => $id_user]);
 
         // Ambil data untuk email laporan

@@ -34,8 +34,78 @@ function getJumlahStok()
 {
     $CI =& get_instance();
     $CI->db->select_sum('qty');
-    $result = $CI->db->get('barang')->row();  
+    $result = $CI->db->get('barang')->row();
     return $result->qty;
+}
+
+/**
+ * Mendapatkan jumlah total transaksi pemasukan barang
+ */
+function getJumlahPemasukan()
+{
+    $CI =& get_instance();
+    return $CI->db->count_all_results('barang_masuk');
+}
+
+/**
+ * Mendapatkan jumlah total transaksi pengeluaran barang
+ */
+function getJumlahPengeluaran()
+{
+    $CI =& get_instance();
+    return $CI->db->count_all_results('barang_keluar');
+}
+
+/**
+ * Mendapatkan jumlah penerima
+ */
+function getJumlahPenerima()
+{
+    $CI =& get_instance();
+    return $CI->db->count_all_results('penerima');
+}
+
+/**
+ * Mendapatkan jumlah barang yang stoknya habis (qty = 0)
+ */
+function getJumlahBarangHabis()
+{
+    $CI =& get_instance();
+    $CI->db->where('qty', 0);
+    return $CI->db->count_all_results('barang');
+}
+
+/**
+ * Mendapatkan jumlah total barang (termasuk yang stok habis)
+ */
+function getJumlahTotalBarang()
+{
+    $CI =& get_instance();
+    return $CI->db->count_all_results('barang');
+}
+
+/**
+ * Mendapatkan jumlah pemasukan hari ini
+ */
+function getTodayMasukCount()
+{
+    $CI =& get_instance();
+    $today = date('Y-m-d');
+    $CI->db->where('waktu >=', $today . ' 00:00:00');
+    $CI->db->where('waktu <=', $today . ' 23:59:59');
+    return $CI->db->count_all_results('barang_masuk');
+}
+
+/**
+ * Mendapatkan jumlah pengeluaran hari ini
+ */
+function getTodayKeluarCount()
+{
+    $CI =& get_instance();
+    $today = date('Y-m-d');
+    $CI->db->where('waktu >=', $today . ' 00:00:00');
+    $CI->db->where('waktu <=', $today . ' 23:59:59');
+    return $CI->db->count_all_results('barang_keluar');
 }
 
 /**

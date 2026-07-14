@@ -45,46 +45,66 @@
 
     <!-- List Barang -->
     <div class="row">
-        <?php if (empty($content)) : ?>
-            <div class="col-12">
+        <div class="col-12">
+            <?php if (empty($content)) : ?>
                 <div class="alert alert-info">Tidak ada barang ditemukan.</div>
-            </div>
-        <?php endif ?>
-        <?php foreach ($content as $row) : ?>
-            <div class="col-md-6 col-lg-4">
-                <div class="card border-left-<?= $row->qty > 0 ? 'success' : 'danger' ?> mb-3 shadow-sm">
-                    <div class="card-body p-3">
-                        <div class="d-flex justify-content-between align-items-start mb-2">
-                            <div>
-                                <h5 class="card-title mb-1 font-weight-bold"><?= htmlspecialchars($row->nama_barang) ?></h5>
-                                <small class="text-muted"><?= ucfirst($row->nama_satuan) ?></small>
-                            </div>
-                            <span class="badge badge-<?= $row->qty > 0 ? 'success' : 'danger' ?> badge-pill">
-                                <?= $row->qty > 0 ? 'Stok: ' . $row->qty : 'Kosong' ?>
-                            </span>
-                        </div>
-                        <p class="mb-1"><strong>Rp <?= number_format($row->harga, 0, ',', '.') ?>,-</strong></p>
-                        <p class="mb-2 small text-muted">Supplier: <?= htmlspecialchars($row->nama_supplier) ?></p>
-                        <?php if (!empty($row->kena_pajak) && $row->kena_pajak): ?>
-                            <span class="badge badge-warning mb-2"><i class="fas fa-percentage"></i> PPN 11%</span>
-                        <?php else: ?>
-                            <span class="badge badge-secondary mb-2">Tidak Kena Pajak</span>
-                        <?php endif; ?>
-                        <form action="<?= base_url('cartin/add') ?>" method="POST" class="mt-2">
-                            <input type="hidden" name="id_barang" value="<?= $row->id_barang ?>">
-                            <div class="input-group input-group-sm">
-                                <input type="number" name="qty_masuk" min="1" value="1" class="form-control text-center">
-                                <div class="input-group-append">
-                                    <button class="btn btn-success" type="submit">
-                                        <i class="fas fa-cart-plus"></i> Masukkan
-                                    </button>
-                                </div>
-                            </div>
-                        </form>
+            <?php else : ?>
+                <div class="card shadow-sm">
+                    <div class="card-body p-0">
+                        <table class="table table-hover table-responsive w-100 d-block d-md-table mb-0">
+                            <thead class="thead-light">
+                                <tr>
+                                    <th>Barang</th>
+                                    <th>Satuan</th>
+                                    <th class="text-right">Harga</th>
+                                    <th>Supplier</th>
+                                    <th class="text-center">Pajak</th>
+                                    <th class="text-center">Stok</th>
+                                    <th class="text-center">Aksi</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                <?php foreach ($content as $row) : ?>
+                                    <tr>
+                                        <td>
+                                            <strong><?= htmlspecialchars($row->nama_barang) ?></strong>
+                                        </td>
+                                        <td><?= ucfirst($row->nama_satuan) ?></td>
+                                        <td class="text-right">Rp <?= number_format($row->harga, 0, ',', '.') ?>,-</td>
+                                        <td><?= htmlspecialchars($row->nama_supplier) ?></td>
+                                        <td class="text-center">
+                                            <?php if (!empty($row->kena_pajak) && $row->kena_pajak): ?>
+                                                <span class="badge badge-warning"><i class="fas fa-percentage"></i> PPN 11%</span>
+                                            <?php else: ?>
+                                                <span class="badge badge-secondary">Tidak Kena</span>
+                                            <?php endif; ?>
+                                        </td>
+                                        <td class="text-center">
+                                            <span class="badge badge-<?= $row->qty > 0 ? 'success' : 'danger' ?> badge-pill">
+                                                <?= $row->qty > 0 ? $row->qty : 'Kosong' ?>
+                                            </span>
+                                        </td>
+                                        <td class="text-center">
+                                            <form action="<?= base_url('cartin/add') ?>" method="POST">
+                                                <input type="hidden" name="id_barang" value="<?= $row->id_barang ?>">
+                                                <div class="input-group input-group-sm">
+                                                    <input type="number" name="qty_masuk" min="1" value="1" class="form-control text-center">
+                                                    <div class="input-group-append">
+                                                        <button class="btn btn-success" type="submit">
+                                                            <i class="fas fa-cart-plus"></i> Masukkan
+                                                        </button>
+                                                    </div>
+                                                </div>
+                                            </form>
+                                        </td>
+                                    </tr>
+                                <?php endforeach ?>
+                            </tbody>
+                        </table>
                     </div>
                 </div>
-            </div>
-        <?php endforeach ?>
+            <?php endif ?>
+        </div>
     </div>
 
     <div class="row d-flex justify-content-center">

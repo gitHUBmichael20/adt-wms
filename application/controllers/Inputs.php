@@ -163,6 +163,42 @@ class Inputs extends MY_Controller
     }
 
     /**
+     * Form kustomisasi invoice sebelum di-download sebagai DOCX
+     * URL: inputs/invoice_form/{id}
+     *
+     * Ditampilkan saat user klik tombol "Download Invoice DOCX" di halaman detail.
+     * Form ini submit (POST) ke inputs/download_docx/{id}.
+     */
+    public function invoice_form($id_barang_masuk)
+    {
+        $data['title']              = 'Easy WMS - Kustomisasi Invoice';
+        $data['breadcrumb_title']   = 'Kustomisasi Invoice';
+        $data['breadcrumb_path']    = "Barang Masuk / Detail / Kustomisasi Invoice / $id_barang_masuk";
+        $data['page']               = 'pages/inputs/invoice_form';
+
+        $data['barang_masuk'] = $this->inputs->select([
+                'user.id AS id_user', 'user.nama',
+                'barang_masuk.id AS id_barang_masuk', 'barang_masuk.waktu',
+                'supplier.nama    AS nama_supplier',
+                'supplier.telefon AS telefon_supplier',
+                'supplier.email   AS email_supplier',
+                'supplier.alamat  AS alamat_supplier',
+            ])
+            ->join('user')
+            ->join('supplier')
+            ->where('barang_masuk.id', $id_barang_masuk)
+            ->where('barang_masuk.id_user', $this->id_user)
+            ->first();
+
+        if (!$data['barang_masuk']) {
+            show_404();
+            return;
+        }
+
+        $this->view($data);
+    }
+
+    /**
      * Download Invoice Barang Masuk sebagai DOCX
      * URL: inputs/download_docx/{id}
      *
@@ -190,6 +226,29 @@ class Inputs extends MY_Controller
         if (!$barang_masuk) {
             show_404();
             return;
+        }
+
+        // Terapkan override dari form kustomisasi (inputs/invoice_form), jika ada
+        $custom_date  = trim((string) $this->input->post('custom_date'));
+        $inv_no_date  = trim((string) $this->input->post('inv_no_date'));
+        $inv_no_num   = trim((string) $this->input->post('inv_no_number'));
+        $custom_no_sp = trim((string) $this->input->post('custom_no_sp'));
+        $custom_btb   = trim((string) $this->input->post('custom_btb'));
+
+        if ($custom_date !== '') {
+            $barang_masuk->custom_date = $custom_date;
+        }
+        if ($inv_no_date !== '' || $inv_no_num !== '') {
+            $barang_masuk->custom_inv_no = 'FDI/INV/'
+                . ($inv_no_date !== '' ? $inv_no_date : date('Y/m', strtotime($barang_masuk->waktu)))
+                . '/'
+                . ($inv_no_num !== '' ? $inv_no_num : str_pad($id_barang_masuk, 5, '0', STR_PAD_LEFT));
+        }
+        if ($custom_no_sp !== '') {
+            $barang_masuk->custom_no_sp = $custom_no_sp;
+        }
+        if ($custom_btb !== '') {
+            $barang_masuk->custom_btb = $custom_btb;
         }
 
         // Ambil list barang

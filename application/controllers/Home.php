@@ -44,6 +44,12 @@ class Home extends MY_Controller
                                     ->orderBy('barang_keluar.waktu', 'DESC')
                                     ->limit(5)
                                     ->get();
+
+        // Monthly chart data - last 6 months
+        $data['chart_labels']       = $this->home->getMonthlyLabels();
+        $data['chart_masuk']        = $this->home->getMonthlyMasuk();
+        $data['chart_keluar']       = $this->home->getMonthlyKeluar();
+
         $data['page']               = 'pages/home/index';
         
         $this->view($data);

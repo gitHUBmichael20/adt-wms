@@ -86,8 +86,10 @@ class Docx_generator
             '18 Mei 2026'         => $tanggal,
             // Invoice number
             'FDI/INV/2026/04/01354' => $inv_no,
-            // No. SP
-            '2022916'             => $no_sp,
+            // No. SP (placeholder asli di template: 2148353)
+            '2148353'              => $no_sp,
+            // No. BTB (placeholder asli di template: 2022916)
+            '2022916'              => $btb,
             // Nama supplier di text box — akan diikuti alamat dan NPWP
             'PT. INDOMARCO PRISMATAMA'          => $this->_xml_escape(!empty($barang_masuk->nama_supplier) ? $barang_masuk->nama_supplier : '-'),
             'Gedung Menara Indomaret'            => $this->_xml_escape($alamat_supplier),
@@ -244,50 +246,121 @@ class Docx_generator
 
     /**
      * Replace teks yang terpecah antar multiple <w:t> elemen.
-     * Membangun regex yang cocok dengan karakter target yang dipisahkan oleh tag XML antar runs.
+     *
+     * Pendekatan: kumpulkan semua run <w:t>...</w:t> beserta posisinya di XML,
+     * gabungkan isinya jadi satu string, cari $search di string gabungan itu,
+     * lalu petakan kembali rentang match tsb ke run-run yang terlibat.
+     *
+     * Setiap run yang match SEBAGIAN (run pertama/terakhir) akan mempertahankan
+     * teks di luar area match (prefix/suffix), sedangkan run yang match PENUH
+     * di tengah akan dikosongkan. Ini penting supaya tidak ada sisa teks lama
+     * yang tertinggal berdampingan dengan teks pengganti — sisa itulah yang
+     * sebelumnya menyebabkan tampilan "dobel" (mis. nomor invoice / tanggal
+     * muncul dua kali / setengah-setengah).
      */
     private function _cross_run_replace($xml, $search, $replace)
     {
         $es = $this->_xml_escape($search);
         $er = $this->_xml_escape($replace);
 
-        // Pattern antar runs: penutup w:t, lalu konten apa saja (bukan batas tabel/paragraf), lalu pembuka w:t
-        $between = '(?:<\/w:t>(?:(?!<\/w:tbl>)(?!<\/w:p>).)*?<w:t[^>]*>)?';
+        if ($es === '') {
+            return $xml;
+        }
 
-        // Bangun pattern dari karakter pencarian
-        $chars = preg_split('//u', $es, -1, PREG_SPLIT_NO_EMPTY);
-        $pattern = '';
-        foreach ($chars as $i => $c) {
-            $pattern .= preg_quote($c, '/');
-            if ($i < count($chars) - 1) {
-                $pattern .= $between;
+        // Kumpulkan semua elemen <w:t ...>...</w:t> beserta posisi absolutnya di $xml
+        if (!preg_match_all('/<w:t(\s[^>]*)?>(.*?)<\/w:t>/s', $xml, $m, PREG_OFFSET_CAPTURE)) {
+            return $xml;
+        }
+
+        $runs = [];
+        $concat = '';
+        foreach ($m[0] as $i => $full) {
+            $text = $m[2][$i][0];
+            $runs[] = [
+                'full_start' => $full[1],
+                'full_len'   => strlen($full[0]),
+                'attrs'      => $m[1][$i][0],
+                'text'       => $text,
+                'concat_start' => strlen($concat),
+            ];
+            $concat .= $text;
+        }
+
+        // Cari semua kemunculan $es di teks gabungan (non-overlapping, kiri ke kanan)
+        $found = [];
+        $offset = 0;
+        while (($pos = strpos($concat, $es, $offset)) !== false) {
+            $found[] = $pos;
+            $offset = $pos + strlen($es);
+        }
+        if (empty($found)) {
+            return $xml;
+        }
+
+        $space_attr = (strpos($er, ' ') !== false || $er === '') ? ' xml:space="preserve"' : '';
+
+        // Kumpulkan override teks baru per-run (index run => teks baru)
+        $overrides = [];
+        foreach ($found as $pos) {
+            $matchStart = $pos;
+            $matchEnd   = $pos + strlen($es);
+
+            $firstIdx = null;
+            $lastIdx  = null;
+            foreach ($runs as $idx => $r) {
+                $runStart = $r['concat_start'];
+                $runEnd   = $runStart + strlen($r['text']);
+                if ($runEnd > $matchStart && $firstIdx === null) {
+                    $firstIdx = $idx;
+                }
+                if ($runStart < $matchEnd) {
+                    $lastIdx = $idx;
+                }
+            }
+            if ($firstIdx === null || $lastIdx === null) {
+                continue;
+            }
+
+            if ($firstIdx === $lastIdx) {
+                // Match sepenuhnya berada dalam satu run
+                $r = $runs[$firstIdx];
+                $localStart = $matchStart - $r['concat_start'];
+                $localEnd   = $matchEnd   - $r['concat_start'];
+                $base = $overrides[$firstIdx] ?? $r['text'];
+                $overrides[$firstIdx] = substr($base, 0, $localStart) . $er . substr($base, $localEnd);
+            } else {
+                // Match tersebar di beberapa run: sisakan prefix di run pertama,
+                // kosongkan run tengah, sisakan suffix di run terakhir.
+                $rf = $runs[$firstIdx];
+                $rl = $runs[$lastIdx];
+                $prefixLen   = $matchStart - $rf['concat_start'];
+                $suffixStart = $matchEnd   - $rl['concat_start'];
+
+                $overrides[$firstIdx] = substr($rf['text'], 0, $prefixLen) . $er;
+                for ($k = $firstIdx + 1; $k < $lastIdx; $k++) {
+                    $overrides[$k] = '';
+                }
+                $overrides[$lastIdx] = substr($rl['text'], $suffixStart);
             }
         }
 
-        $new_xml = preg_replace_callback(
-            '/' . $pattern . '/s',
-            function ($m) use ($er) {
-                // Replace semua <w:t> content dalam match: taruh er di yang pertama, kosongkan sisanya
-                $full = $m[0];
-                $first = true;
-                $result = preg_replace_callback(
-                    '/<w:t([^>]*)>([^<]*)<\/w:t>/',
-                    function ($tm) use (&$first, $er) {
-                        if ($first) {
-                            $first = false;
-                            $space = (strpos($er, ' ') !== false) ? ' xml:space="preserve"' : '';
-                            return '<w:t' . $space . '>' . $er . '</w:t>';
-                        }
-                        return '<w:t></w:t>';
-                    },
-                    $full
-                );
-                return $result;
-            },
-            $xml
-        );
+        if (empty($overrides)) {
+            return $xml;
+        }
 
-        return $new_xml !== null ? $new_xml : $xml;
+        // Terapkan override dari belakang ke depan supaya offset run lain tidak bergeser
+        krsort($overrides);
+        foreach ($overrides as $idx => $newText) {
+            $r = $runs[$idx];
+            $attrs = $r['attrs'];
+            if ($newText !== '' && strpos($newText, ' ') !== false && strpos($attrs, 'xml:space') === false) {
+                $attrs .= $space_attr;
+            }
+            $newTag = '<w:t' . $attrs . '>' . $newText . '</w:t>';
+            $xml = substr_replace($xml, $newTag, $r['full_start'], $r['full_len']);
+        }
+
+        return $xml;
     }
 
     /**
