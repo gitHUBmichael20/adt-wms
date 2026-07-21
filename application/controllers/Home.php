@@ -24,7 +24,7 @@ class Home extends MY_Controller
     {
         $nama = $this->session->userdata('nama');
 
-        $data['title']              = 'Easy WMS - Dashboard';
+        $data['title']              = 'ADT WMS - Dashboard';
         $data['breadcrumb_title']   = "Hallo $nama 😊";
         $data['breadcrumb_path']    = 'Home / Dashboard';
         $data['barang_masuk']       = $this->home->select([

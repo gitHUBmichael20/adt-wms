@@ -35,7 +35,7 @@ class Recipient extends MY_Controller
         }
 
         if (!$this->recipient->validate()) {
-            $data['title']            = 'Easy WMS - Register Penerima';
+            $data['title']            = 'ADT WMS - Register Penerima';
             $data['input']            = $input;
             $data['page']             = 'pages/recipient/index';
             $data['breadcrumb_title'] = 'Register Penerima';

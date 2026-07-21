@@ -27,7 +27,7 @@ class Cartout extends MY_Controller
     {
         $this->session->unset_userdata('keyword');
 
-        $data['title']              = 'Easy WMS - Keranjang Keluar';
+        $data['title']              = 'ADT WMS - Keranjang Keluar';
         $data['breadcrumb_title']   = "Keranjang Keluar";
         $data['breadcrumb_path']    = 'Barang Keluar / Keranjang Keluar';
         $data['page']               = 'pages/cartout/index';
@@ -45,6 +45,38 @@ class Cartout extends MY_Controller
         $data['recipients'] = $this->recipients_list->get();
 
         $this->view($data);
+    }
+
+    /**
+     * AJAX: Ambil daftar toko/cabang milik satu penerima.
+     * Dipanggil dari halaman keranjang keluar saat user memilih penerima,
+     * supaya pilihan "Toko Tujuan" ikut ter-update.
+     *
+     * URL: cartout/stores/{id_penerima}
+     * Response: JSON array of {id, nama_toko, alamat}
+     */
+    public function stores($id_penerima = null)
+    {
+        header('Content-Type: application/json');
+
+        if (!$id_penerima) {
+            echo json_encode([]);
+            return;
+        }
+
+        $this->load->model('Toko_model', 'toko');
+        $stores = $this->toko->getByPenerima($id_penerima);
+
+        $result = [];
+        foreach ($stores as $s) {
+            $result[] = [
+                'id'        => $s->id,
+                'nama_toko' => $s->nama_toko,
+                'alamat'    => $s->alamat,
+            ];
+        }
+
+        echo json_encode($result);
     }
 
     /**
@@ -212,9 +244,20 @@ class Cartout extends MY_Controller
 
         // Ambil data form dari POST
         $id_penerima    = $this->input->post('id_penerima');
+        $id_toko        = $this->input->post('id_toko');
         $no_po          = $this->input->post('no_po');
         $keterangan     = $this->input->post('keterangan');
         $serial_numbers = $this->input->post('serial_numbers');
+
+        // Pastikan toko yang dipilih benar-benar milik penerima yang dipilih
+        // (mencegah user memilih toko dari perusahaan lain lewat manipulasi form)
+        if ($id_toko) {
+            $this->load->model('Toko_model', 'toko_check');
+            $store = $this->toko_check->where('id', $id_toko)->first();
+            if (!$store || (string) $store->id_penerima !== (string) $id_penerima) {
+                $id_toko = null;
+            }
+        }
 
         // Generate token unik (berlaku 30 menit)
         $token      = bin2hex(random_bytes(24));
@@ -233,6 +276,7 @@ class Cartout extends MY_Controller
         // Simpan payload di DATABASE (bukan session)
         $payload = [
             'id_penerima'    => $id_penerima,
+            'id_toko'        => $id_toko,
             'no_po'          => $no_po,
             'keterangan'     => $keterangan,
             'serial_numbers' => $serial_numbers,
@@ -248,16 +292,20 @@ class Cartout extends MY_Controller
             'used'       => 0,
         ]);
 
-        // Ambil data user dan penerima untuk info email
+        // Ambil data user, penerima, dan toko untuk info email
         $user = $this->db->where('id', $this->id_user)->get('user')->row();
         $penerima = null;
         if ($id_penerima) {
             $penerima = $this->db->where('id', $id_penerima)->get('penerima')->row();
         }
+        $toko = null;
+        if ($id_toko) {
+            $toko = $this->db->where('id', $id_toko)->get('toko')->row();
+        }
 
         // Kirim email konfirmasi ke ADMIN
         $admin_email = $this->config->item('admin_email');
-        $sent = $this->_send_email_konfirmasi_keluar($token, $user, $penerima, $cart_items, $no_po, $keterangan, $admin_email);
+        $sent = $this->_send_email_konfirmasi_keluar($token, $user, $penerima, $toko, $cart_items, $no_po, $keterangan, $admin_email);
 
         if ($sent) {
             $this->session->set_flashdata('info', 
@@ -280,7 +328,7 @@ class Cartout extends MY_Controller
      * Kirim email KONFIRMASI ke ADMIN sebelum checkout barang keluar.
      * Admin langsung klik tombol — tidak perlu login.
      */
-    private function _send_email_konfirmasi_keluar($token, $user, $penerima, $cart_items, $no_po, $keterangan, $admin_email)
+    private function _send_email_konfirmasi_keluar($token, $user, $penerima, $toko, $cart_items, $no_po, $keterangan, $admin_email)
     {
         $total_keseluruhan = 0;
         $rows_html         = '';
@@ -304,6 +352,7 @@ class Cartout extends MY_Controller
         $nama_user     = htmlspecialchars($user->nama);
         $email_user    = htmlspecialchars($user->email);
         $nama_penerima = $penerima ? htmlspecialchars($penerima->nama . ' — ' . $penerima->divisi) : '<em>Tidak ditentukan</em>';
+        $nama_toko     = $toko ? htmlspecialchars($toko->nama_toko . ' — ' . $toko->alamat) : '<em>Tidak ditentukan</em>';
         $waktu_fmt     = date('d F Y, H:i:s');
         $expire_fmt    = date('d F Y, H:i:s', time() + 1800);
         $no_po_html    = $no_po ? htmlspecialchars($no_po) : '<em>-</em>';
@@ -313,7 +362,7 @@ class Cartout extends MY_Controller
         $url_yes = base_url('confirm/checkout/' . $token . '/yes');
         $url_no  = base_url('confirm/checkout/' . $token . '/no');
 
-        $subject = '[KONFIRMASI ADMIN] Barang Keluar Menunggu Persetujuan — Easy WMS';
+        $subject = '[KONFIRMASI ADMIN] Barang Keluar Menunggu Persetujuan — ADT WMS';
 
         $message = '
 <!DOCTYPE html>
@@ -325,14 +374,14 @@ class Cartout extends MY_Controller
     <table width="620" cellpadding="0" cellspacing="0" style="background:#ffffff;border-radius:8px;overflow:hidden;box-shadow:0 2px 8px rgba(0,0,0,0.08);">
       <tr>
         <td style="background:#b91c1c;padding:28px 32px;">
-          <div style="font-size:11px;color:#fca5a5;letter-spacing:1.5px;text-transform:uppercase;margin-bottom:4px;">Easy WMS — Konfirmasi Admin Diperlukan</div>
+          <div style="font-size:11px;color:#fca5a5;letter-spacing:1.5px;text-transform:uppercase;margin-bottom:4px;">ADT WMS — Konfirmasi Admin Diperlukan</div>
           <div style="font-size:22px;font-weight:700;color:#ffffff;">📤 Permintaan Barang Keluar</div>
         </td>
       </tr>
       <tr>
         <td style="padding:24px 32px 8px;">
           <p style="font-size:14px;color:#374151;line-height:1.7;margin:0;">
-            Kepada Yth. <strong>Admin Easy WMS</strong>,<br><br>
+            Kepada Yth. <strong>Admin ADT WMS</strong>,<br><br>
             Pengguna <strong>' . $nama_user . '</strong> (' . $email_user . ') mengajukan proses 
             <strong>Barang Keluar</strong> pada ' . $waktu_fmt . '.<br>
             Silakan tinjau dan konfirmasi permintaan ini.<br>
@@ -350,8 +399,12 @@ class Cartout extends MY_Controller
               <td style="padding:10px 16px;font-size:13px;font-weight:600;border-bottom:1px solid #fce8e8;">' . $nama_user . ' (' . $email_user . ')</td>
             </tr>
             <tr>
-              <td style="padding:10px 16px;color:#6b7280;font-size:13px;border-bottom:1px solid #fce8e8;">Penerima</td>
+              <td style="padding:10px 16px;color:#6b7280;font-size:13px;border-bottom:1px solid #fce8e8;">Penerima (Customer)</td>
               <td style="padding:10px 16px;font-size:13px;font-weight:600;color:#b91c1c;border-bottom:1px solid #fce8e8;">' . $nama_penerima . '</td>
+            </tr>
+            <tr>
+              <td style="padding:10px 16px;color:#6b7280;font-size:13px;border-bottom:1px solid #fce8e8;">Toko Tujuan (Ship To)</td>
+              <td style="padding:10px 16px;font-size:13px;font-weight:600;color:#b91c1c;border-bottom:1px solid #fce8e8;">' . $nama_toko . '</td>
             </tr>
             <tr>
               <td style="padding:10px 16px;color:#6b7280;font-size:13px;border-bottom:1px solid #fce8e8;">No. PO</td>
@@ -408,7 +461,7 @@ class Cartout extends MY_Controller
       <tr>
         <td style="background:#fdf6f6;border-top:1px solid #fce8e8;padding:18px 32px;">
           <p style="font-size:12px;color:#9ca3af;margin:0;line-height:1.6;">
-            Email ini dikirim otomatis oleh <strong>Easy WMS</strong>. Jangan teruskan link ini ke pihak yang tidak berwenang.
+            Email ini dikirim otomatis oleh <strong>ADT WMS</strong>. Jangan teruskan link ini ke pihak yang tidak berwenang.
           </p>
         </td>
       </tr>
@@ -432,7 +485,7 @@ class Cartout extends MY_Controller
         ];
         $this->email->initialize($email_config);
         $this->email->clear();
-        $this->email->from($this->config->item('smtp_user'), 'Easy WMS Notification');
+        $this->email->from($this->config->item('smtp_user'), 'ADT WMS Notification');
         $this->email->to($admin_email);
         $this->email->subject($subject);
         $this->email->message($message);

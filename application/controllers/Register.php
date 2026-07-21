@@ -33,7 +33,7 @@ class Register extends MY_Controller
         }
 
         if (!$this->register->validate()) {     // Jika validasi gagal maka arahkan ke form register lagi
-            $data['title'] = 'Easy WMS - Register Karyawan';
+            $data['title'] = 'ADT WMS - Register Karyawan';
             $data['input'] = $input;
             $data['page'] = 'pages/register/index';
             $data['breadcrumb_title']   = 'Register Karyawan';

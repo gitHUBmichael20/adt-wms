@@ -39,15 +39,22 @@
                                         </form>
                                     </td>
                                     <td>
-                                        <!-- Serial number dikirim saat checkout via hidden input, diisi di kolom ini -->
-                                        <input
-                                            type="text"
-                                            class="form-control serial-number-input"
-                                            data-id-barang="<?= $row->id_barang ?>"
-                                            placeholder="Contoh: SN-ABC123 (opsional)"
-                                            style="min-width:180px;"
-                                        >
-                                        <small class="text-muted">Pisahkan dengan koma jika lebih dari 1</small>
+                                        <!-- Serial number dikirim saat checkout via hidden input (lihat form di bawah) -->
+                                        <div class="sn-scan-wrapper" data-id-barang="<?= $row->id_barang ?>" data-qty="<?= $row->qty_barang_keluar ?>" style="min-width:220px;">
+                                            <div class="input-group input-group-sm mb-1">
+                                                <input
+                                                    type="text"
+                                                    class="form-control sn-scan-input"
+                                                    placeholder="Scan / ketik SN, lalu Enter"
+                                                    autocomplete="off"
+                                                >
+                                                <div class="input-group-append">
+                                                    <span class="input-group-text sn-count-badge">0/<?= $row->qty_barang_keluar ?></span>
+                                                </div>
+                                            </div>
+                                            <div class="sn-chips"></div>
+                                            <small class="text-muted">Opsional. Arahkan scanner ke kolom ini lalu scan satu-satu</small>
+                                        </div>
                                     </td>
                                     <td>
                                         <form action="<?= base_url('cartout/delete') ?>" method="POST">
@@ -78,7 +85,7 @@
                         <div class="row">
                             <div class="col-md-6">
                                 <div class="form-group">
-                                    <label for="id_penerima"><strong>Tujuan Pengiriman</strong></label>
+                                    <label for="id_penerima"><strong>Penerima (Customer)</strong></label>
                                     <select name="id_penerima" id="id_penerima" class="form-control">
                                         <option value="">— Pilih Penerima (opsional) —</option>
                                         <?php if (!empty($recipients)) : ?>
@@ -87,8 +94,21 @@
                                             <?php endforeach ?>
                                         <?php endif ?>
                                     </select>
-                                    <small class="text-muted">Pilih perusahaan / divisi tujuan pengiriman barang</small>
+                                    <small class="text-muted">Perusahaan induk / customer tujuan pengiriman</small>
                                 </div>
+                            </div>
+                            <div class="col-md-6">
+                                <div class="form-group">
+                                    <label for="id_toko"><strong>Toko Tujuan (Ship To)</strong></label>
+                                    <select name="id_toko" id="id_toko" class="form-control" disabled>
+                                        <option value="">— Pilih Penerima dahulu —</option>
+                                    </select>
+                                    <small class="text-muted">Cabang / alamat kirim spesifik milik penerima di atas</small>
+                                </div>
+                            </div>
+                        </div>
+                        <div class="row">
+                            <div class="col-md-6">
                             </div>
                             <div class="col-md-6">
                                 <div class="form-group">
@@ -125,6 +145,24 @@
     <input type="hidden" name="id_pesanan" value="">
 </form>
 
+<style>
+.sn-chips { display: flex; flex-wrap: wrap; gap: 4px; min-height: 4px; }
+.sn-chip {
+    display: inline-flex; align-items: center; gap: 6px;
+    background: #eef2ff; color: #3730a3; border: 1px solid #c7d2fe;
+    border-radius: 12px; padding: 2px 8px; font-size: 12px; line-height: 1.6;
+}
+.sn-chip button {
+    background: none; border: none; color: #6366f1; font-weight: bold;
+    line-height: 1; padding: 0; cursor: pointer; font-size: 13px;
+}
+.sn-chip button:hover { color: #dc2626; }
+.sn-count-badge { min-width: 46px; text-align: center; font-weight: 600; }
+.sn-count-badge.sn-ok { background: #d1fae5 !important; color: #065f46; }
+.sn-count-badge.sn-over { background: #fee2e2 !important; color: #991b1b; }
+.sn-scan-input.sn-flash { background-color: #ecfdf5; transition: background-color .15s ease; }
+</style>
+
 <script>
 function dropCart() {
     if (confirm('Yakin ingin mengosongkan keranjang?')) {
@@ -132,14 +170,159 @@ function dropCart() {
     }
 }
 
-// Sinkronkan nilai serial number dari input tabel ke hidden input form sebelum submit
-document.getElementById('form-checkout').addEventListener('submit', function() {
-    document.querySelectorAll('.serial-number-input').forEach(function(input) {
-        var idBarang = input.getAttribute('data-id-barang');
-        var hidden   = document.getElementById('sn-hidden-' + idBarang);
-        if (hidden) {
-            hidden.value = input.value.trim();
+// ==== Dynamic Toko (Ship To) dropdown ====
+// Saat "Penerima" dipilih, ambil daftar toko miliknya via AJAX supaya
+// "Toko Tujuan" selalu sesuai dengan penerima yang dipilih.
+(function () {
+    var penerimaSelect = document.getElementById('id_penerima');
+    var tokoSelect      = document.getElementById('id_toko');
+    var baseUrl          = '<?= base_url('cartout/stores/') ?>';
+
+    function resetTokoSelect(message) {
+        tokoSelect.innerHTML = '<option value="">' + message + '</option>';
+        tokoSelect.disabled = true;
+    }
+
+    function loadStores(idPenerima) {
+        if (!idPenerima) {
+            resetTokoSelect('— Pilih Penerima dahulu —');
+            return;
         }
+
+        resetTokoSelect('Memuat daftar toko...');
+
+        fetch(baseUrl + idPenerima)
+            .then(function (res) { return res.json(); })
+            .then(function (stores) {
+                if (!stores || stores.length === 0) {
+                    resetTokoSelect('— Belum ada toko untuk penerima ini —');
+                    return;
+                }
+
+                tokoSelect.innerHTML = '<option value="">— Pilih Toko (opsional) —</option>';
+                stores.forEach(function (s) {
+                    var opt = document.createElement('option');
+                    opt.value = s.id;
+                    opt.textContent = s.nama_toko + ' — ' + s.alamat;
+                    tokoSelect.appendChild(opt);
+                });
+                tokoSelect.disabled = false;
+            })
+            .catch(function () {
+                resetTokoSelect('— Gagal memuat toko, coba lagi —');
+            });
+    }
+
+    if (penerimaSelect) {
+        penerimaSelect.addEventListener('change', function () {
+            loadStores(this.value);
+        });
+
+        // Kalau halaman reload dengan penerima sudah terpilih (mis. validasi
+        // gagal), langsung muat toko-nya juga
+        if (penerimaSelect.value) {
+            loadStores(penerimaSelect.value);
+        }
+    }
+})();
+
+// ==== Dynamic serial number scanning ====
+// Setiap wrapper .sn-scan-wrapper punya array serial number sendiri.
+// Scanner barcode pada umumnya bekerja seperti keyboard: ketik kode lalu kirim
+// tombol Enter, jadi kita cukup dengar event Enter pada input untuk menambah SN.
+
+function initSerialScanning() {
+    document.querySelectorAll('.sn-scan-wrapper').forEach(function (wrapper) {
+        var idBarang = wrapper.getAttribute('data-id-barang');
+        var qty      = parseInt(wrapper.getAttribute('data-qty'), 10) || 0;
+        var input    = wrapper.querySelector('.sn-scan-input');
+        var chipsBox = wrapper.querySelector('.sn-chips');
+        var badge    = wrapper.querySelector('.sn-count-badge');
+        var hidden   = document.getElementById('sn-hidden-' + idBarang);
+        var serials  = [];
+
+        function render() {
+            chipsBox.innerHTML = '';
+            serials.forEach(function (sn, idx) {
+                var chip = document.createElement('span');
+                chip.className = 'sn-chip';
+                chip.innerHTML = '<span></span> <button type="button" title="Hapus">&times;</button>';
+                chip.querySelector('span').textContent = sn;
+                chip.querySelector('button').addEventListener('click', function () {
+                    serials.splice(idx, 1);
+                    render();
+                    input.focus();
+                });
+                chipsBox.appendChild(chip);
+            });
+
+            badge.textContent = serials.length + (qty ? ('/' + qty) : '');
+            badge.classList.remove('sn-ok', 'sn-over');
+            if (qty) {
+                if (serials.length === qty) badge.classList.add('sn-ok');
+                else if (serials.length > qty) badge.classList.add('sn-over');
+            }
+
+            if (hidden) hidden.value = serials.join(',');
+        }
+
+        function addFromInput() {
+            var raw = input.value.trim();
+            input.value = '';
+            if (!raw) return;
+
+            // Sebagian scanner/paste bisa mengirim beberapa kode sekaligus dipisah koma
+            raw.split(',').forEach(function (part) {
+                var sn = part.trim();
+                if (!sn) return;
+                if (serials.indexOf(sn) !== -1) {
+                    // Duplikat: tetap beri tanda visual tapi tidak digandakan
+                    input.classList.add('is-invalid');
+                    setTimeout(function () { input.classList.remove('is-invalid'); }, 600);
+                    return;
+                }
+                serials.push(sn);
+            });
+
+            render();
+            input.classList.add('sn-flash');
+            setTimeout(function () { input.classList.remove('sn-flash'); }, 150);
+            input.focus();
+        }
+
+        input.addEventListener('keydown', function (e) {
+            if (e.key === 'Enter') {
+                e.preventDefault();
+                addFromInput();
+            }
+        });
+
+        // Kalau input kehilangan fokus tapi masih ada teks tersisa (misal scanner
+        // tidak mengirim Enter), tetap simpan supaya tidak hilang begitu saja.
+        input.addEventListener('blur', function () {
+            if (input.value.trim()) addFromInput();
+        });
+
+        render();
     });
+
+    // Fokuskan input scan pertama otomatis, biar siap langsung dipakai scanner
+    var firstInput = document.querySelector('.sn-scan-input');
+    if (firstInput) firstInput.focus();
+}
+
+document.addEventListener('DOMContentLoaded', initSerialScanning);
+
+// Jaga-jaga: pastikan hidden input tersinkron sebelum submit (sudah dihandle
+// realtime oleh render(), ini hanya lapisan pengaman tambahan)
+document.getElementById('form-checkout').addEventListener('submit', function (e) {
+    var overCapacity = false;
+    document.querySelectorAll('.sn-scan-wrapper').forEach(function (wrapper) {
+        var badge = wrapper.querySelector('.sn-count-badge');
+        if (badge.classList.contains('sn-over')) overCapacity = true;
+    });
+    if (overCapacity && !confirm('Ada jumlah serial number yang melebihi kuantitas barang. Lanjutkan checkout?')) {
+        e.preventDefault();
+    }
 });
 </script>

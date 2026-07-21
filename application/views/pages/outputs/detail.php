@@ -50,7 +50,11 @@
                             </tr>
                             <tr>
                                 <td colspan="3" style="padding-bottom:4px;">
-                                    <?php if ($penerima) : ?>
+                                    <?php if ($toko) : ?>
+                                        <span style="font-size:17px; font-weight:700; color:#1a237e; letter-spacing:0.3px;">
+                                            <?= htmlspecialchars($toko->nama_toko) ?>
+                                        </span>
+                                    <?php elseif ($penerima) : ?>
                                         <span style="font-size:17px; font-weight:700; color:#1a237e; letter-spacing:0.3px;">
                                             <?= htmlspecialchars($penerima->nama) ?>
                                         </span>
@@ -63,7 +67,9 @@
                                 <td>
                                     <?php if ($penerima) : ?>
                                         <strong><?= htmlspecialchars($penerima->nama) ?></strong>
-                                        <?php if ($penerima->divisi) : ?>
+                                        <?php if ($toko) : ?>
+                                            <br><small><?= htmlspecialchars($toko->nama_toko) ?></small>
+                                        <?php elseif ($penerima->divisi) : ?>
                                             <br><small><?= htmlspecialchars($penerima->divisi) ?></small>
                                         <?php endif ?>
                                     <?php else : ?>
@@ -76,12 +82,24 @@
 
                     <div class="do-shipto">
                         <div class="do-shipto-label">Ship To :</div>
-                        <?php if ($penerima) : ?>
+                        <?php if ($toko) : ?>
+                            <div class="do-shipto-divisi"><?= htmlspecialchars($toko->nama_toko) ?></div>
+                            <?php if ($penerima) : ?>
+                                <div class="do-shipto-name"><?= htmlspecialchars($penerima->nama) ?></div>
+                            <?php endif ?>
+                            <div class="do-shipto-addr"><?= nl2br(htmlspecialchars($toko->alamat)) ?></div>
+                            <?php if ($toko->pic || $toko->telefon) : ?>
+                                <div class="do-shipto-addr" style="margin-top:4px;">
+                                    <?= $toko->pic ? 'PIC: ' . htmlspecialchars($toko->pic) : '' ?>
+                                    <?= $toko->telefon ? ' ' . htmlspecialchars($toko->telefon) : '' ?>
+                                </div>
+                            <?php endif ?>
+                        <?php elseif ($penerima) : ?>
                             <div class="do-shipto-divisi"><?= htmlspecialchars($penerima->divisi) ?></div>
                             <div class="do-shipto-name"><?= htmlspecialchars($penerima->nama) ?></div>
                             <div class="do-shipto-addr"><?= nl2br(htmlspecialchars($penerima->alamat)) ?></div>
                         <?php else : ?>
-                            <div style="color:#999; font-style:italic;">Penerima tidak dicatat</div>
+                            <div style="color:#999; font-style:italic;">Toko / Penerima tidak dicatat</div>
                         <?php endif ?>
                     </div>
                 </div>

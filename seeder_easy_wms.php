@@ -14,9 +14,13 @@
  *    atau jalankan lewat CLI: php seeder_easy_wms.php
  * 4. Script ini akan MENGHAPUS data lama di tabel:
  *    barang, barang_masuk, barang_masuk_detail,
- *    barang_keluar, barang_keluar_detail, supplier, penerima
+ *    barang_keluar, barang_keluar_detail, supplier, penerima, toko
  *    lalu mengisi ulang dengan data dummy.
  *    Tabel user & satuan TIDAK dihapus/diubah.
+ *
+ *    CATATAN: pastikan migrasi `assets/db/migration_add_toko.sql` sudah
+ *    dijalankan lebih dulu (tabel `toko` & kolom `barang_keluar.id_toko`
+ *    harus sudah ada) sebelum menjalankan seeder ini.
  * ============================================================
  */
 
@@ -72,6 +76,7 @@ try {
         'barang_masuk',
         'barang',
         'supplier',
+        'toko',
         'penerima',
     ];
     foreach ($truncateTables as $t) {
@@ -148,6 +153,30 @@ try {
     logmsg($log, "Berhasil menambahkan " . count($penerimaList) . " penerima");
 
     // ------------------------------------------------------------
+    // 5b. TOKO (cabang milik masing-masing penerima)
+    // ------------------------------------------------------------
+    // format: [penerima_index, nama_toko, alamat, pic, telefon]
+    $tokoList = [
+        [0, 'Cabang Jakarta Pusat',   'Jl. Kebon Sirih No. 20, Jakarta Pusat',            'Andi Wijaya',   '081298700001'],
+        [0, 'Cabang Jakarta Barat',   'Jl. Panjang No. 5, Kebon Jeruk, Jakarta Barat',    'Rina Kusuma',   '081298700002'],
+        [1, 'Gudang Utama Bekasi',    'Jl. Ahmad Yani No. 55, Bekasi Timur',              'Sutrisno',      '081311100001'],
+        [2, 'Kantor Cabang Bandung',  'Jl. Diponegoro No. 30, Coblong, Bandung',          'Dewi Lestari',  '081444400001'],
+        [3, 'Toko Berkah Jaya Pusat', 'Jl. Veteran No. 7, Klojen, Malang',                'Hendra Saputra','081555500001'],
+        [4, 'Gudang Surabaya Timur',  'Jl. Yos Sudarso No. 18, Surabaya',                 'Yusuf Ramadhan','081666600001'],
+        [4, 'Gudang Surabaya Barat',  'Jl. Mayjend Sungkono No. 45, Surabaya',            'Fitri Handayani','081666600002'],
+    ];
+    $stmt = $conn->prepare("INSERT INTO toko (id_penerima, nama_toko, alamat, pic, telefon, status) VALUES (?,?,?,?,?, 'aktif')");
+    $tokoIds = [];
+    foreach ($tokoList as $t) {
+        $id_penerima_toko = $penerimaIds[$t[0]];
+        $stmt->bind_param('issss', $id_penerima_toko, $t[1], $t[2], $t[3], $t[4]);
+        $stmt->execute();
+        // simpan per-penerima supaya mudah diambil random saat seed barang_keluar
+        $tokoIds[$t[0]][] = $stmt->insert_id;
+    }
+    logmsg($log, "Berhasil menambahkan " . count($tokoList) . " toko/cabang");
+
+    // ------------------------------------------------------------
     // 6. PRODUK PRINTER (barang) - qty awal 0, nanti diisi via barang_masuk
     // ------------------------------------------------------------
     $produk = [
@@ -215,29 +244,34 @@ try {
     // ------------------------------------------------------------
     // 8. BARANG KELUAR (transaksi pengeluaran barang)
     // ------------------------------------------------------------
-    // format: [id_penerima_index, no_po, keterangan, [ [produk_index, qty], ... ] ]
+    // format: [id_penerima_index, id_toko_index_dalam_penerima_atau_null, no_po, keterangan, [ [produk_index, qty], ... ] ]
     $keluarPlan = [
-        [0, 'PO-2026-0011', 'Pengiriman kebutuhan kantor cabang Jakarta', [[0, 5], [1, 4]]],
-        [1, 'PO-2026-0012', 'Permintaan stok gudang Bekasi',              [[2, 3], [4, 8]]], // produk 4 habis
-        [2, 'PO-2026-0013', 'Pengadaan printer unit operasional Bandung', [[3, 4], [6, 10]]], // produk 6 habis
-        [3, 'PO-2026-0014', 'Distribusi rutin bulanan',                   [[5, 5], [8, 6], [9, 3]]], // produk 8 habis
+        [0, 0, 'PO-2026-0011', 'Pengiriman kebutuhan kantor cabang Jakarta', [[0, 5], [1, 4]]],
+        [1, 0, 'PO-2026-0012', 'Permintaan stok gudang Bekasi',              [[2, 3], [4, 8]]], // produk 4 habis
+        [2, 0, 'PO-2026-0013', 'Pengadaan printer unit operasional Bandung', [[3, 4], [6, 10]]], // produk 6 habis
+        [3, 0, 'PO-2026-0014', 'Distribusi rutin bulanan',                   [[5, 5], [8, 6], [9, 3]]], // produk 8 habis
     ];
 
-    $stmtHeaderK = $conn->prepare("INSERT INTO barang_keluar (id_user, id_penerima, no_po, keterangan, waktu) VALUES (?,?,?,?,?)");
+    $stmtHeaderK = $conn->prepare("INSERT INTO barang_keluar (id_user, id_penerima, id_toko, no_po, keterangan, waktu) VALUES (?,?,?,?,?,?)");
     $stmtDetailK = $conn->prepare("INSERT INTO barang_keluar_detail (id_barang_keluar, id_barang, qty, serial_number) VALUES (?,?,?,?)");
 
     $countKeluar = 0;
     foreach ($keluarPlan as $k) {
         $id_penerima = $penerimaIds[$k[0]];
-        $no_po = $k[1];
-        $keterangan = $k[2];
+        // Ambil toko ke-N milik penerima ini jika tersedia (opsional, boleh NULL)
+        $id_toko = null;
+        if (isset($k[1]) && isset($tokoIds[$k[0]][$k[1]])) {
+            $id_toko = $tokoIds[$k[0]][$k[1]];
+        }
+        $no_po = $k[2];
+        $keterangan = $k[3];
         $waktu = date('Y-m-d H:i:s', strtotime('-' . rand(0, 10) . ' days'));
-        $stmtHeaderK->bind_param('iisss', $id_user, $id_penerima, $no_po, $keterangan, $waktu);
+        $stmtHeaderK->bind_param('iiisss', $id_user, $id_penerima, $id_toko, $no_po, $keterangan, $waktu);
         $stmtHeaderK->execute();
         $id_barang_keluar = $stmtHeaderK->insert_id;
         $countKeluar++;
 
-        foreach ($k[3] as $item) {
+        foreach ($k[4] as $item) {
             $id_barang = $barangIds[$item[0]];
             $qty = $item[1];
             $serial = 'SN-' . strtoupper(substr(md5(uniqid()), 0, 8));
@@ -283,6 +317,13 @@ try {
     }
     echo "</table></div>";
 
+    echo "<div class='box'><h3>🏪 Toko / Cabang</h3><table><tr><th>ID</th><th>Penerima (Induk)</th><th>Nama Toko</th><th>Alamat</th><th>PIC</th><th>Telefon</th></tr>";
+    $res = $conn->query("SELECT t.id, p.nama AS penerima, t.nama_toko, t.alamat, t.pic, t.telefon FROM toko t LEFT JOIN penerima p ON p.id = t.id_penerima ORDER BY t.id");
+    while ($row = $res->fetch_assoc()) {
+        echo "<tr><td>{$row['id']}</td><td>{$row['penerima']}</td><td>{$row['nama_toko']}</td><td>{$row['alamat']}</td><td>{$row['pic']}</td><td>{$row['telefon']}</td></tr>";
+    }
+    echo "</table></div>";
+
     echo "<div class='box'><h3>⬇️ Barang Masuk</h3><table><tr><th>ID</th><th>Supplier</th><th>Waktu</th><th>Total Harga</th></tr>";
     $res = $conn->query("SELECT bm.id, s.nama AS supplier, bm.waktu, bm.total_harga FROM barang_masuk bm LEFT JOIN supplier s ON s.id = bm.id_supplier ORDER BY bm.id");
     while ($row = $res->fetch_assoc()) {
@@ -290,10 +331,10 @@ try {
     }
     echo "</table></div>";
 
-    echo "<div class='box'><h3>⬆️ Barang Keluar</h3><table><tr><th>ID</th><th>Penerima</th><th>No. PO</th><th>Keterangan</th><th>Waktu</th></tr>";
-    $res = $conn->query("SELECT bk.id, p.nama AS penerima, bk.no_po, bk.keterangan, bk.waktu FROM barang_keluar bk LEFT JOIN penerima p ON p.id = bk.id_penerima ORDER BY bk.id");
+    echo "<div class='box'><h3>⬆️ Barang Keluar</h3><table><tr><th>ID</th><th>Penerima</th><th>Toko</th><th>No. PO</th><th>Keterangan</th><th>Waktu</th></tr>";
+    $res = $conn->query("SELECT bk.id, p.nama AS penerima, t.nama_toko AS toko, bk.no_po, bk.keterangan, bk.waktu FROM barang_keluar bk LEFT JOIN penerima p ON p.id = bk.id_penerima LEFT JOIN toko t ON t.id = bk.id_toko ORDER BY bk.id");
     while ($row = $res->fetch_assoc()) {
-        echo "<tr><td>{$row['id']}</td><td>{$row['penerima']}</td><td>{$row['no_po']}</td><td>{$row['keterangan']}</td><td>{$row['waktu']}</td></tr>";
+        echo "<tr><td>{$row['id']}</td><td>{$row['penerima']}</td><td>" . ($row['toko'] ?: '-') . "</td><td>{$row['no_po']}</td><td>{$row['keterangan']}</td><td>{$row['waktu']}</td></tr>";
     }
     echo "</table></div>";
 

@@ -132,10 +132,11 @@ class Docx_generator
     /**
      * @param object      $barang_keluar  Row dari DB
      * @param array       $list_barang    Array of row (nama, qty, id_satuan, serial_number optional)
-     * @param object|null $penerima       Row penerima (nama, divisi, alamat) atau null
+     * @param object|null $penerima       Row penerima (nama, divisi, alamat) — perusahaan induk / customer, atau null
+     * @param object|null $toko           Row toko (nama_toko, alamat, pic, telefon) — cabang tujuan kirim, atau null
      * @param string      $save_path      Path backup
      */
-    public function generate_delivery_order($barang_keluar, $list_barang, $penerima, $save_path)
+    public function generate_delivery_order($barang_keluar, $list_barang, $penerima, $toko, $save_path)
     {
         $template_path = $this->template_dir . 'delivery_order_template.docx';
 
@@ -147,21 +148,28 @@ class Docx_generator
         $do_no = 'FDI/DO/' . date('Y/m', strtotime($barang_keluar->waktu))
             . '/' . str_pad($barang_keluar->id_barang_keluar, 5, '0', STR_PAD_LEFT);
 
-        $tanggal      = 'Bekasi, ' . date('d F Y', strtotime($barang_keluar->waktu));
-        $nama_penerima = $penerima ? $penerima->nama : '-';
-        $no_po        = !empty($barang_keluar->no_po) ? $barang_keluar->no_po : '-';
+        $tanggal = 'Bekasi, ' . date('d F Y', strtotime($barang_keluar->waktu));
+        $no_po   = !empty($barang_keluar->no_po) ? $barang_keluar->no_po : '-';
 
         $xml = $this->_read_xml_from_docx($template_path, 'word/document.xml');
 
-        $nama_penerima_full = $penerima
-            ? ($penerima->nama . ($penerima->divisi ? ' - ' . $penerima->divisi : ''))
-            : '-';
+        // Kolom "Customer": nama perusahaan induk (penerima), ditambah nama
+        // toko/cabang tujuan di baris berikutnya jika ada — mengikuti pola
+        // "Customer : PT. XXX \n <NAMA TOKO>" pada contoh Delivery Order.
+        $customer_lines = [];
+        if ($penerima) {
+            $customer_lines[] = $penerima->nama;
+        }
+        if ($toko) {
+            $customer_lines[] = $toko->nama_toko;
+        }
+        $nama_customer_full = !empty($customer_lines) ? implode(' - ', $customer_lines) : '-';
 
         $replacements = [
             'FDI/DO/2026/04/01354' => $do_no,
             'Bekasi, 6 Mei 2026'   => $tanggal,
             'SP 2148353'           => $no_po,
-            'BOGOR - DEVELOPMENT'  => $this->_xml_escape($nama_penerima_full),
+            'BOGOR - DEVELOPMENT'  => $this->_xml_escape($nama_customer_full),
         ];
 
         $xml = $this->_replace_wt_text($xml, $replacements);
@@ -169,9 +177,20 @@ class Docx_generator
         // Replace baris tabel item DO
         $xml = $this->_replace_do_items($xml, $list_barang, $barang_keluar);
 
-        // Ship To box — jika ada penerima, ganti blok
-        if ($penerima) {
-            $xml = $this->_replace_shipto($xml, $penerima);
+        // Ship To box — alamat pengiriman spesifik.
+        // Prioritas: toko (cabang) jika ada, jika tidak fallback ke alamat penerima.
+        if ($toko) {
+            $xml = $this->_replace_shipto($xml, [
+                'label'  => $toko->nama_toko,
+                'nama'   => $penerima ? $penerima->nama : '',
+                'alamat' => $toko->alamat,
+            ]);
+        } elseif ($penerima) {
+            $xml = $this->_replace_shipto($xml, [
+                'label'  => $penerima->divisi,
+                'nama'   => $penerima->nama,
+                'alamat' => $penerima->alamat,
+            ]);
         }
 
         $docx_bytes = $this->_write_xml_to_docx($template_path, 'word/document.xml', $xml);
@@ -511,23 +530,26 @@ XML;
     }
 
     /**
-     * Ganti konten Ship To box (text box floating di DO template)
-     * dengan nama & alamat penerima asli.
-     * Template punya teks "BOGOR - DEVELOPMENT" di sana.
+     * Ganti konten Ship To box (text box floating di DO template) dengan
+     * alamat pengiriman spesifik — biasanya toko/cabang, atau alamat
+     * penerima sebagai fallback jika belum ada toko yang dipilih.
+     * Template punya teks "BOGOR - DEVELOPMENT" di sana (di kolom Customer,
+     * terpisah dari box Ship To yang aslinya kosong).
+     *
+     * @param array $shipTo ['label' => nama toko/divisi (bold, baris 1),
+     *                        'nama'  => nama perusahaan (baris 2),
+     *                        'alamat'=> alamat lengkap (baris 3)]
      */
-    private function _replace_shipto($xml, $penerima)
+    private function _replace_shipto($xml, $shipTo)
     {
-        // Inject penerima info into the Ship To textbox.
-        // Template Ship To box only has "Ship To :" then an empty paragraph.
-        // We add divisi/nama/alamat after "Ship To :".
-        $divisi  = !empty($penerima->divisi)  ? $this->_xml_escape($penerima->divisi)  : '';
-        $nama    = !empty($penerima->nama)    ? $this->_xml_escape($penerima->nama)    : '';
-        $alamat  = !empty($penerima->alamat)  ? $this->_xml_escape($penerima->alamat)  : '';
+        $label  = !empty($shipTo['label'])  ? $this->_xml_escape($shipTo['label'])  : '';
+        $nama   = !empty($shipTo['nama'])   ? $this->_xml_escape($shipTo['nama'])   : '';
+        $alamat = !empty($shipTo['alamat']) ? $this->_xml_escape($shipTo['alamat']) : '';
 
         // Build replacement paragraphs for the text box
         $extra = '';
-        if ($divisi) {
-            $extra .= '<w:p><w:r><w:rPr><w:b/><w:sz w:val="24"/><w:szCs w:val="24"/></w:rPr><w:t xml:space="preserve">' . $divisi . '</w:t></w:r></w:p>';
+        if ($label) {
+            $extra .= '<w:p><w:r><w:rPr><w:b/><w:sz w:val="24"/><w:szCs w:val="24"/></w:rPr><w:t xml:space="preserve">' . $label . '</w:t></w:r></w:p>';
         }
         if ($nama) {
             $extra .= '<w:p><w:r><w:rPr><w:sz w:val="24"/><w:szCs w:val="24"/></w:rPr><w:t xml:space="preserve">' . $nama . '</w:t></w:r></w:p>';

@@ -24,7 +24,7 @@ class Users extends MY_Controller
     {
         $this->session->unset_userdata('keyword');
         
-        $data['title']              = 'Easy WMS - List Staff';
+        $data['title']              = 'ADT WMS - List Staff';
         $data['breadcrumb_title']   = 'List Staff';
         $data['breadcrumb_path']    = 'Manajemen Staff / List Staff';
         $data['content']            = $this->users->paginate($page)->get();
@@ -49,7 +49,7 @@ class Users extends MY_Controller
 
         $keyword = $this->session->userdata('keyword');
 
-        $data['title']              = 'Easy WMS - Cari Staff';
+        $data['title']              = 'ADT WMS - Cari Staff';
         $data['breadcrumb_title']   = "Daftar Staff";
         $data['breadcrumb_path']    = "Daftar Staff / Cari / $keyword";
         $data['content']            = $this->users->paginate($page)
@@ -100,7 +100,7 @@ class Users extends MY_Controller
         }
 
         if (!$this->users->validate()) {
-            $data['title']              = 'Easy WMS - Edit Staff';
+            $data['title']              = 'ADT WMS - Edit Staff';
             $data['page']               = 'pages/users/edit';
             $data['breadcrumb_title']   = 'Edit Data Staff';
             $data['breadcrumb_path']    = "Manajemen Staff / Edit Data Staff / " . $data['input']->nama;

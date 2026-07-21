@@ -142,6 +142,7 @@ class Confirm extends CI_Controller
     private function _proses_keluar($pending, $payload, $id_user)
     {
         $id_penerima    = isset($payload['id_penerima'])    ? $payload['id_penerima']    : null;
+        $id_toko        = isset($payload['id_toko'])        ? $payload['id_toko']        : null;
         $no_po          = isset($payload['no_po'])          ? $payload['no_po']          : null;
         $keterangan     = isset($payload['keterangan'])     ? $payload['keterangan']     : null;
         $serial_numbers = isset($payload['serial_numbers']) ? $payload['serial_numbers'] : [];
@@ -182,6 +183,7 @@ class Confirm extends CI_Controller
         $this->db->insert('barang_keluar', [
             'id_user'     => $id_user,
             'id_penerima' => $id_penerima ?: null,
+            'id_toko'     => $id_toko     ?: null,
             'no_po'       => $no_po       ?: null,
             'keterangan'  => $keterangan  ?: null,
         ]);
@@ -213,7 +215,7 @@ class Confirm extends CI_Controller
 
         // Ambil data untuk email laporan
         $barang_keluar = $this->db
-            ->select('user.id AS id_user, user.nama, user.email, barang_keluar.id AS id_barang_keluar, barang_keluar.waktu, barang_keluar.no_po, barang_keluar.keterangan, barang_keluar.id_penerima')
+            ->select('user.id AS id_user, user.nama, user.email, barang_keluar.id AS id_barang_keluar, barang_keluar.waktu, barang_keluar.no_po, barang_keluar.keterangan, barang_keluar.id_penerima, barang_keluar.id_toko')
             ->join('user', 'barang_keluar.id_user = user.id', 'left')
             ->where('barang_keluar.id', $id_barang_keluar)
             ->get('barang_keluar')
@@ -290,7 +292,7 @@ class Confirm extends CI_Controller
 <head>
     <meta charset="UTF-8"/>
     <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
-    <title>Konfirmasi Checkout — Easy WMS</title>
+    <title>Konfirmasi Checkout — ADT WMS</title>
     <style>
         * { box-sizing: border-box; margin: 0; padding: 0; }
         body { font-family: "Segoe UI", Arial, sans-serif; background: #f3f4f6; min-height: 100vh; display: flex; align-items: center; justify-content: center; padding: 24px; }
@@ -307,16 +309,16 @@ class Confirm extends CI_Controller
 <body>
     <div class="card">
         <div class="header">
-            <div class="badge">Easy WMS — Hasil Konfirmasi</div>
+            <div class="badge">ADT WMS — Hasil Konfirmasi</div>
             <div class="title">' . $c['icon'] . ' ' . ucfirst($type === 'success' ? 'Berhasil' : ($type === 'warning' ? 'Dibatalkan' : 'Gagal')) . '</div>
         </div>
         <div class="body">
             <div class="alert">' . $message . '</div>
             ' . $table_html . '
-            <a class="btn" href="' . base_url('login') . '">Masuk ke Dashboard Easy WMS</a>
+            <a class="btn" href="' . base_url('login') . '">Masuk ke Dashboard ADT WMS</a>
         </div>
         <div class="footer">
-            Halaman ini dihasilkan otomatis oleh <strong>Easy WMS</strong>. Anda bisa menutup tab ini.
+            Halaman ini dihasilkan otomatis oleh <strong>ADT WMS</strong>. Anda bisa menutup tab ini.
         </div>
     </div>
 </body>
@@ -355,7 +357,7 @@ class Confirm extends CI_Controller
         $waktu         = isset($barang_masuk->waktu) ? $barang_masuk->waktu : date('Y-m-d H:i:s');
         $waktu_fmt     = date('d F Y, H:i:s', strtotime($waktu));
 
-        $subject = '[BARANG MASUK] Transaksi #' . $id_transaksi . ' Berhasil Diproses — Easy WMS';
+        $subject = '[BARANG MASUK] Transaksi #' . $id_transaksi . ' Berhasil Diproses — ADT WMS';
 
         $message = '
 <!DOCTYPE html>
@@ -367,7 +369,7 @@ class Confirm extends CI_Controller
     <table width="620" cellpadding="0" cellspacing="0" style="background:#ffffff;border-radius:8px;overflow:hidden;box-shadow:0 2px 8px rgba(0,0,0,0.08);">
       <tr>
         <td style="background:#1a7a3c;padding:28px 32px;">
-          <div style="font-size:11px;color:#a8ddb5;letter-spacing:1.5px;text-transform:uppercase;margin-bottom:4px;">Easy WMS — Laporan Transaksi</div>
+          <div style="font-size:11px;color:#a8ddb5;letter-spacing:1.5px;text-transform:uppercase;margin-bottom:4px;">ADT WMS — Laporan Transaksi</div>
           <div style="font-size:22px;font-weight:700;color:#ffffff;">📦 Barang Masuk Diproses</div>
         </td>
       </tr>
@@ -413,7 +415,7 @@ class Confirm extends CI_Controller
       </tr>
       <tr>
         <td style="background:#f6faf7;border-top:1px solid #e8f0e9;padding:20px 32px;">
-          <p style="font-size:12px;color:#9ca3af;margin:0;">Email ini dikirim otomatis oleh <strong>Easy WMS</strong>.</p>
+          <p style="font-size:12px;color:#9ca3af;margin:0;">Email ini dikirim otomatis oleh <strong>ADT WMS</strong>.</p>
         </td>
       </tr>
     </table>
@@ -437,7 +439,7 @@ class Confirm extends CI_Controller
         ];
         $this->email->initialize($email_config);
         $this->email->clear();
-        $this->email->from($this->config->item('smtp_user'), 'Easy WMS Notification');
+        $this->email->from($this->config->item('smtp_user'), 'ADT WMS Notification');
         $this->email->to($admin_email);
         $this->email->subject($subject);
         $this->email->message($message);
@@ -475,7 +477,7 @@ class Confirm extends CI_Controller
         $waktu        = isset($barang_keluar->waktu) ? $barang_keluar->waktu : date('Y-m-d H:i:s');
         $waktu_fmt    = date('d F Y, H:i:s', strtotime($waktu));
 
-        $subject = '[BARANG KELUAR] Transaksi #' . $id_transaksi . ' Berhasil Diproses — Easy WMS';
+        $subject = '[BARANG KELUAR] Transaksi #' . $id_transaksi . ' Berhasil Diproses — ADT WMS';
 
         $message = '
 <!DOCTYPE html>
@@ -487,7 +489,7 @@ class Confirm extends CI_Controller
     <table width="620" cellpadding="0" cellspacing="0" style="background:#ffffff;border-radius:8px;overflow:hidden;box-shadow:0 2px 8px rgba(0,0,0,0.08);">
       <tr>
         <td style="background:#b91c1c;padding:28px 32px;">
-          <div style="font-size:11px;color:#fca5a5;letter-spacing:1.5px;text-transform:uppercase;margin-bottom:4px;">Easy WMS — Laporan Transaksi</div>
+          <div style="font-size:11px;color:#fca5a5;letter-spacing:1.5px;text-transform:uppercase;margin-bottom:4px;">ADT WMS — Laporan Transaksi</div>
           <div style="font-size:22px;font-weight:700;color:#ffffff;">📤 Barang Keluar Diproses</div>
         </td>
       </tr>
@@ -529,7 +531,7 @@ class Confirm extends CI_Controller
       </tr>
       <tr>
         <td style="background:#fdf6f6;border-top:1px solid #fce8e8;padding:20px 32px;">
-          <p style="font-size:12px;color:#9ca3af;margin:0;">Email ini dikirim otomatis oleh <strong>Easy WMS</strong>.</p>
+          <p style="font-size:12px;color:#9ca3af;margin:0;">Email ini dikirim otomatis oleh <strong>ADT WMS</strong>.</p>
         </td>
       </tr>
     </table>
@@ -553,7 +555,7 @@ class Confirm extends CI_Controller
         ];
         $this->email->initialize($email_config);
         $this->email->clear();
-        $this->email->from($this->config->item('smtp_user'), 'Easy WMS Notification');
+        $this->email->from($this->config->item('smtp_user'), 'ADT WMS Notification');
         $this->email->to($admin_email);
         $this->email->subject($subject);
         $this->email->message($message);

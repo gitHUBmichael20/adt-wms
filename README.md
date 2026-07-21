@@ -1,4 +1,4 @@
-# Easy WMS
+# ADT WMS
 
 Aplikasi manajemen pergudangan berbasis web dengan menggunakan framework CodeIgniter 3.
 
@@ -6,7 +6,7 @@ Aplikasi manajemen pergudangan berbasis web dengan menggunakan framework CodeIgn
 
 ### Konfigurasi
 
-- Aktifkan virtual host dengan hostname `easy-wms.test`, mengikuti konfigurasi [`base_url`](https://github.com/mramirid/easy-wms/blob/07f4525fa0aa5efe0978679efb60f0915a06426b/application/config/config.php#L26).
+- Aktifkan virtual host dengan hostname `adt-wms.test`, mengikuti konfigurasi [`base_url`](https://github.com/mramirid/easy-wms/blob/07f4525fa0aa5efe0978679efb60f0915a06426b/application/config/config.php#L26).
 - Buat database `easy_wms` dan impor file [easy_wms.sql](./assets/db/easy_wms.sql) ke dalamnya.
 
 ### Alat

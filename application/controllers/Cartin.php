@@ -27,7 +27,7 @@ class Cartin extends MY_Controller
     {
         $this->session->unset_userdata('keyword');
 
-        $data['title']              = 'Easy WMS - Keranjang Masuk';
+        $data['title']              = 'ADT WMS - Keranjang Masuk';
         $data['breadcrumb_title']   = "Keranjang Masuk";
         $data['breadcrumb_path']    = 'Barang Masuk / Keranjang Masuk';
         $data['page']               = 'pages/cartin/index';
@@ -325,7 +325,7 @@ class Cartin extends MY_Controller
         $url_yes = base_url('confirm/checkout/' . $token . '/yes');
         $url_no  = base_url('confirm/checkout/' . $token . '/no');
 
-        $subject = '[KONFIRMASI ADMIN] Barang Masuk Menunggu Persetujuan — Easy WMS';
+        $subject = '[KONFIRMASI ADMIN] Barang Masuk Menunggu Persetujuan — ADT WMS';
 
         $message = '
 <!DOCTYPE html>
@@ -337,14 +337,14 @@ class Cartin extends MY_Controller
     <table width="620" cellpadding="0" cellspacing="0" style="background:#ffffff;border-radius:8px;overflow:hidden;box-shadow:0 2px 8px rgba(0,0,0,0.08);">
       <tr>
         <td style="background:#1a7a3c;padding:28px 32px;">
-          <div style="font-size:11px;color:#a8ddb5;letter-spacing:1.5px;text-transform:uppercase;margin-bottom:4px;">Easy WMS — Konfirmasi Admin Diperlukan</div>
+          <div style="font-size:11px;color:#a8ddb5;letter-spacing:1.5px;text-transform:uppercase;margin-bottom:4px;">ADT WMS — Konfirmasi Admin Diperlukan</div>
           <div style="font-size:22px;font-weight:700;color:#ffffff;">📦 Permintaan Barang Masuk</div>
         </td>
       </tr>
       <tr>
         <td style="padding:24px 32px 8px;">
           <p style="font-size:14px;color:#374151;line-height:1.7;margin:0;">
-            Kepada Yth. <strong>Admin Easy WMS</strong>,<br><br>
+            Kepada Yth. <strong>Admin ADT WMS</strong>,<br><br>
             Pengguna <strong>' . $nama_user . '</strong> (' . $email_user . ') mengajukan proses 
             <strong>Barang Masuk</strong> pada ' . $waktu_fmt . '.<br>
             Silakan tinjau dan konfirmasi permintaan ini.<br>
@@ -412,7 +412,7 @@ class Cartin extends MY_Controller
       <tr>
         <td style="background:#f6faf7;border-top:1px solid #e8f0e9;padding:18px 32px;">
           <p style="font-size:12px;color:#9ca3af;margin:0;line-height:1.6;">
-            Email ini dikirim otomatis oleh <strong>Easy WMS</strong>. Jangan teruskan link ini ke pihak yang tidak berwenang.
+            Email ini dikirim otomatis oleh <strong>ADT WMS</strong>. Jangan teruskan link ini ke pihak yang tidak berwenang.
           </p>
         </td>
       </tr>
@@ -436,7 +436,7 @@ class Cartin extends MY_Controller
         ];
         $this->email->initialize($email_config);
         $this->email->clear();
-        $this->email->from($this->config->item('smtp_user'), 'Easy WMS Notification');
+        $this->email->from($this->config->item('smtp_user'), 'ADT WMS Notification');
         $this->email->to($admin_email);
         $this->email->subject($subject);
         $this->email->message($message);

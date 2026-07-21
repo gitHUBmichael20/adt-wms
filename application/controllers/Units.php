@@ -24,7 +24,7 @@ class Units extends MY_Controller
     {
         $this->session->unset_userdata('keyword');
         
-        $data['title']              = 'Easy WMS - List Satuan';
+        $data['title']              = 'ADT WMS - List Satuan';
         $data['breadcrumb_title']   = 'List Satuan';
         $data['breadcrumb_path']    = 'Manajemen Barang / List Satuan';
         $data['content']            = $this->units->paginate($page)->get();
@@ -52,7 +52,7 @@ class Units extends MY_Controller
 
         $keyword = $this->session->userdata('keyword');
 
-        $data['title']              = 'Easy WMS - Cari Staff';
+        $data['title']              = 'ADT WMS - Cari Staff';
         $data['breadcrumb_title']   = "Daftar Staff";
         $data['breadcrumb_path']    = "Daftar Staff / Cari / $keyword";
         $data['content']            = $this->units->like('nama', $keyword)
@@ -90,7 +90,7 @@ class Units extends MY_Controller
         }
 
         if (!$this->units->validate()) {
-            $data['title']              = 'Easy WMS - Edit Satuan Barang';
+            $data['title']              = 'ADT WMS - Edit Satuan Barang';
             $data['page']               = 'pages/units/edit';
             $data['breadcrumb_title']   = 'Edit Satuan Barang';
             $data['breadcrumb_path']    = "Manajemen Barang / Edit Satuan Barang / " . $data['input']->nama;

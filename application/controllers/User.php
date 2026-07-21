@@ -25,7 +25,7 @@ class User extends MY_Controller
 
         $id = $this->session->userdata('id_user');
         
-        $data['title']              = 'Easy WMS - Profile';
+        $data['title']              = 'ADT WMS - Profile';
         $data['breadcrumb_title']   = 'Profile';
         $data['breadcrumb_path']    = 'Profile';
         $data['content']            = $this->user->where('id', $id)->first();
@@ -65,7 +65,7 @@ class User extends MY_Controller
         }
 
         if (!$this->user->validate()) {
-            $data['title']              = 'Easy WMS - Edit Profile';
+            $data['title']              = 'ADT WMS - Edit Profile';
             $data['page']               = 'pages/user/edit';
             $data['breadcrumb_title']   = 'Edit Profile';
             $data['breadcrumb_path']    = "Profile / Edit Profile / " . $data['input']->nama;

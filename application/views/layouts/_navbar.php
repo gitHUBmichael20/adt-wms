@@ -24,9 +24,9 @@
                     <!-- Logo text -->
                     <span class="logo-text ml-2">
                         <!-- dark Logo text -->
-                        <img src="<?= base_url('assets/images/logo-text.png') ?>" height="22" width="100" alt="homepage" class="dark-logo" />
+                        <img src="<?= base_url('assets/images/logo-text.png') ?>" height="40" width="100" alt="homepage" class="dark-logo" />
                         <!-- Light Logo text -->
-                        <img src="<?= base_url('assets/images/logo-light-text.png') ?>" class="light-logo" height="22" width="100" alt="homepage" />
+                        <img src="<?= base_url('assets/images/logo-light-text.png') ?>" class="light-logo" height="80" width="240" alt="homepage" />
                     </span>
                 </a>
             </div>

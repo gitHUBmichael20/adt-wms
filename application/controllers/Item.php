@@ -35,7 +35,7 @@ class Item extends MY_Controller
         }
 
         if (!$this->item->validate()) {
-            $data['title'] = 'Easy WMS - Register Barang';
+            $data['title'] = 'ADT WMS - Register Barang';
             $data['input'] = $input;
             $data['page']  = 'pages/item/index';
             $data['breadcrumb_title'] = 'Register Barang';

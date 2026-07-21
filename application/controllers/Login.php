@@ -25,7 +25,7 @@ class Login extends MY_Controller
         }
 
         if (!$this->login->validate()) {
-            $data['title'] = 'Login - Easy WMS';
+            $data['title'] = 'Login - ADT WMS';
             $data['input'] = $input;
 
             return $this->view($data, true);

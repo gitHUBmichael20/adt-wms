@@ -28,7 +28,7 @@ class Outputs extends MY_Controller
         $this->session->unset_userdata('keyword');
         $this->session->unset_userdata('time');
         
-        $data['title']              = 'Easy WMS - List Barang Keluar';
+        $data['title']              = 'ADT WMS - List Barang Keluar';
         $data['breadcrumb_title']   = 'List Barang Keluar';
         $data['breadcrumb_path']    = 'Barang Keluar / List Barang Keluar';
         $data['content']            = $this->outputs->select([
@@ -62,7 +62,7 @@ class Outputs extends MY_Controller
             redirect(base_url('outputs'));
         }
 
-        $data['title']              = 'Easy WMS - List Barang Keluar';
+        $data['title']              = 'ADT WMS - List Barang Keluar';
         $data['breadcrumb_title']   = 'List Barang Keluar';
         $data['breadcrumb_path']    = "Barang Keluar / List Barang Keluar / Cari / $keyword";
         $data['content']            = $this->outputs->select([
@@ -100,7 +100,7 @@ class Outputs extends MY_Controller
             redirect(base_url('outputs'));
         }
 
-        $data['title']              = 'Easy WMS - List Barang Keluar';
+        $data['title']              = 'ADT WMS - List Barang Keluar';
         $data['breadcrumb_title']   = 'List Barang Keluar';
         $data['breadcrumb_path']    = "Barang Keluar / List Barang Keluar / Filter / $time";
         $data['content']            = $this->outputs->select([
@@ -122,7 +122,7 @@ class Outputs extends MY_Controller
 
     public function detail($id_barang_keluar)
     {
-        $data['title']              = 'Easy WMS - List Barang Keluar';
+        $data['title']              = 'ADT WMS - List Barang Keluar';
         $data['breadcrumb_title']   = 'List Barang Keluar';
         $data['breadcrumb_path']    = "Barang Keluar / List Barang Keluar / Detail / $id_barang_keluar";
         $data['page']               = 'pages/outputs/detail';
@@ -131,7 +131,7 @@ class Outputs extends MY_Controller
                 'user.id AS id_user', 'user.nama',
                 'barang_keluar.id AS id_barang_keluar', 'barang_keluar.waktu',
                 'barang_keluar.no_po', 'barang_keluar.keterangan',
-                'barang_keluar.id_penerima'
+                'barang_keluar.id_penerima', 'barang_keluar.id_toko'
             ])
             ->join('user')
             ->where('barang_keluar.id', $id_barang_keluar)
@@ -146,12 +146,20 @@ class Outputs extends MY_Controller
             ->where('barang_keluar_detail.id_barang_keluar', $id_barang_keluar)
             ->get();
 
-        // Load data penerima jika ada
+        // Load data penerima (perusahaan induk / customer) jika ada
         if ($data['barang_keluar'] && $data['barang_keluar']->id_penerima) {
             $this->load->model('Recipients_model', 'recipients_out');
             $data['penerima'] = $this->recipients_out->where('id', $data['barang_keluar']->id_penerima)->first();
         } else {
             $data['penerima'] = null;
+        }
+
+        // Load data toko (cabang / alamat kirim spesifik) jika ada
+        if ($data['barang_keluar'] && $data['barang_keluar']->id_toko) {
+            $this->load->model('Toko_model', 'toko_out');
+            $data['toko'] = $this->toko_out->where('id', $data['barang_keluar']->id_toko)->first();
+        } else {
+            $data['toko'] = null;
         }
 
         $this->view($data);
@@ -172,7 +180,7 @@ class Outputs extends MY_Controller
                 'user.id AS id_user', 'user.nama',
                 'barang_keluar.id AS id_barang_keluar', 'barang_keluar.waktu',
                 'barang_keluar.no_po', 'barang_keluar.keterangan',
-                'barang_keluar.id_penerima'
+                'barang_keluar.id_penerima', 'barang_keluar.id_toko'
             ])
             ->join('user')
             ->where('barang_keluar.id', $id_barang_keluar)
@@ -193,11 +201,18 @@ class Outputs extends MY_Controller
             ->where('barang_keluar_detail.id_barang_keluar', $id_barang_keluar)
             ->get();
 
-        // Load penerima
+        // Load penerima (perusahaan induk / customer)
         $penerima = null;
         if ($barang_keluar->id_penerima) {
             $this->load->model('Recipients_model', 'recipients_out');
             $penerima = $this->recipients_out->where('id', $barang_keluar->id_penerima)->first();
+        }
+
+        // Load toko (cabang / alamat kirim spesifik)
+        $toko = null;
+        if ($barang_keluar->id_toko) {
+            $this->load->model('Toko_model', 'toko_out');
+            $toko = $this->toko_out->where('id', $barang_keluar->id_toko)->first();
         }
 
         // Path backup
@@ -207,7 +222,7 @@ class Outputs extends MY_Controller
 
         // Load library & generate
         $this->load->library('Docx_generator');
-        $this->docx_generator->generate_delivery_order($barang_keluar, $list_barang, $penerima, $save_path);
+        $this->docx_generator->generate_delivery_order($barang_keluar, $list_barang, $penerima, $toko, $save_path);
     }
 }
 

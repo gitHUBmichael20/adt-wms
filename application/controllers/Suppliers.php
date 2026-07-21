@@ -24,7 +24,7 @@ class Suppliers extends MY_Controller
     {
         $this->session->unset_userdata('keyword');
 
-        $data['title']              = 'Easy WMS - List Supplier';
+        $data['title']              = 'ADT WMS - List Supplier';
         $data['breadcrumb_title']   = 'List Supplier';
         $data['breadcrumb_path']    = 'Manajemen Supplier / List Supplier';
         $data['content']            = $this->suppliers->paginate($page)->get();
@@ -49,7 +49,7 @@ class Suppliers extends MY_Controller
 
         $keyword = $this->session->userdata('keyword');
 
-        $data['title']              = 'Easy WMS - Cari Supplier';
+        $data['title']              = 'ADT WMS - Cari Supplier';
         $data['breadcrumb_title']   = "List Supplier";
         $data['breadcrumb_path']    = "List Supplier / Cari / $keyword";
         $data['content']            = $this->suppliers->paginate($page)
@@ -90,7 +90,7 @@ class Suppliers extends MY_Controller
         }
 
         if (!$this->suppliers->validate()) {
-            $data['title']              = 'Easy WMS - Edit Supplier';
+            $data['title']              = 'ADT WMS - Edit Supplier';
             $data['page']               = 'pages/suppliers/edit';
             $data['breadcrumb_title']   = 'Edit Data Supplier';
             $data['breadcrumb_path']    = "Manajemen Supplier / Edit Data Supplier / " . $data['input']->nama;

@@ -36,7 +36,7 @@ class Items extends MY_Controller
     {
         $this->session->unset_userdata('keyword_in');
 
-        $data['title']            = 'Easy WMS - Barang Masuk';
+        $data['title']            = 'ADT WMS - Barang Masuk';
         $data['breadcrumb_title'] = 'Barang Masuk';
         $data['breadcrumb_path']  = 'Barang Masuk / Pilih Barang';
         $data['content']          = $this->_getItemsQuery()->paginate($page)->get();
@@ -51,7 +51,7 @@ class Items extends MY_Controller
     {
         $this->session->unset_userdata('keyword_in');
 
-        $data['title']            = 'Easy WMS - Barang Masuk';
+        $data['title']            = 'ADT WMS - Barang Masuk';
         $data['breadcrumb_title'] = 'Barang Masuk';
         $data['breadcrumb_path']  = 'Barang Masuk / Filter / ' . ucfirst(getUnitName($id_unit));
         $data['content']          = $this->_getItemsQuery()->where('id_satuan', $id_unit)->paginate($page)->get();
@@ -66,7 +66,7 @@ class Items extends MY_Controller
     {
         $this->session->unset_userdata('keyword_in');
 
-        $data['title']            = 'Easy WMS - Barang Masuk';
+        $data['title']            = 'ADT WMS - Barang Masuk';
         $data['breadcrumb_title'] = 'Barang Masuk';
         $data['breadcrumb_path']  = 'Barang Masuk / Ketersediaan / ' . ucfirst($param);
         $data['page']             = 'pages/items/index_in';
@@ -88,7 +88,7 @@ class Items extends MY_Controller
         $keyword = $this->session->userdata('keyword_in');
         if (empty($keyword)) redirect(base_url('items/in'));
 
-        $data['title']            = 'Easy WMS - Barang Masuk';
+        $data['title']            = 'ADT WMS - Barang Masuk';
         $data['breadcrumb_title'] = 'Barang Masuk';
         $data['breadcrumb_path']  = "Barang Masuk / Cari / $keyword";
         $data['content']          = $this->_getItemsQuery()->like('barang.nama', $keyword)->paginate($page)->get();
@@ -108,7 +108,7 @@ class Items extends MY_Controller
     {
         $this->session->unset_userdata('keyword_out');
 
-        $data['title']            = 'Easy WMS - Barang Keluar';
+        $data['title']            = 'ADT WMS - Barang Keluar';
         $data['breadcrumb_title'] = 'Barang Keluar';
         $data['breadcrumb_path']  = 'Barang Keluar / Pilih Barang';
         $data['content']          = $this->_getItemsQuery()->paginate($page)->get();
@@ -123,7 +123,7 @@ class Items extends MY_Controller
     {
         $this->session->unset_userdata('keyword_out');
 
-        $data['title']            = 'Easy WMS - Barang Keluar';
+        $data['title']            = 'ADT WMS - Barang Keluar';
         $data['breadcrumb_title'] = 'Barang Keluar';
         $data['breadcrumb_path']  = 'Barang Keluar / Filter / ' . ucfirst(getUnitName($id_unit));
         $data['content']          = $this->_getItemsQuery()->where('id_satuan', $id_unit)->paginate($page)->get();
@@ -138,7 +138,7 @@ class Items extends MY_Controller
     {
         $this->session->unset_userdata('keyword_out');
 
-        $data['title']            = 'Easy WMS - Barang Keluar';
+        $data['title']            = 'ADT WMS - Barang Keluar';
         $data['breadcrumb_title'] = 'Barang Keluar';
         $data['breadcrumb_path']  = 'Barang Keluar / Ketersediaan / ' . ucfirst($param);
         $data['page']             = 'pages/items/index_out';
@@ -160,7 +160,7 @@ class Items extends MY_Controller
         $keyword = $this->session->userdata('keyword_out');
         if (empty($keyword)) redirect(base_url('items/out'));
 
-        $data['title']            = 'Easy WMS - Barang Keluar';
+        $data['title']            = 'ADT WMS - Barang Keluar';
         $data['breadcrumb_title'] = 'Barang Keluar';
         $data['breadcrumb_path']  = "Barang Keluar / Cari / $keyword";
         $data['content']          = $this->_getItemsQuery()->like('barang.nama', $keyword)->paginate($page)->get();
